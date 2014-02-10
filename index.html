@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Canvas Sprite Tests</title>
+		<script type="text/javascript" src="js/fznPlatform.js"></script>
+		<script type="text/javascript" src="js/fznSprites.js"></script>
+		<script>
+			var game,luigi;
+			function loadGame(){
+				game = new fzn.Game("fznBoard");
+				game.addSprite({
+					source: "img/luigi-sprites.png",
+					size:[16,22],
+					actions: {
+						stand:{
+							turn:0,
+							steps:[[235,0]]
+						},
+						walkR:{
+							turn:5,
+							steps:[[235,0],[264,0]]
+						},
+						runR:{
+							turn:3,
+							steps:[[321,0],[348,0]]
+						},
+						jumpR:{
+							turn:0,
+							steps:[[294,30]]
+						},
+						standL:{
+							turn:0,
+							steps:[[199,0]]
+						},
+						walkL:{
+							turn:5,
+							steps:[[198,0],[169,0]]
+						},
+						runL:{
+							turn:3,
+							steps:[[111,0],[84,0]]
+						},
+						jumpL:{
+							turn:0,
+							steps:[[139,30]]
+						}
+					}
+				})
+			}
+		</script>
+	</head>
+	<body onload="loadGame('fznBoard');">
+		<canvas id="fznBoard" width="300" height="300"></canvas>
+	</body>
+</html>
