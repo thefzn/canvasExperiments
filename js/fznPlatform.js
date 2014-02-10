@@ -28,6 +28,7 @@ fzn.Game.prototype = {
 		var self = this,
 			i,len;
 		if(this.loadQueue == 0){
+			this.clear();
 			self.turn = (self.turn < 100) ? self.turn + 1 : 0;
 			for(i=0,len=this.sprites.length;i<len;i++){
 				this.sprites[i].go();
@@ -36,6 +37,10 @@ fzn.Game.prototype = {
 		window.requestAnimFrame(function() {
           self.go();
         });
+	},
+	clear: function(){
+		this.canvas.clearRect(0,0,this.cnv.width,this.cnv.height);
+		
 	},
 	addSprite: function(params){
 		var sprite = new fzn.Sprite(this,params);
