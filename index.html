@@ -7,49 +7,72 @@
 		<script>
 			var game,luigi;
 			function loadGame(){
-				game = new fzn.Game("fznBoard");
+				game = new fzn.Game("board");
+				game.floor = 260;
+				game.addBackground("img/background.png",[0,-67]);
 				game.addSprite({
+					id: "luigi",
 					source: "img/luigi-sprites.png",
+					type: "user",
+					collide: {
+						block:true
+					},
 					size:[16,22],
-					actions: {
-						stand:{
-							turn:0,
-							steps:[[235,0]]
+					sprite: {
+						R:{
+							stand:{ delay:0, steps:[[235,0]]},
+							walk:{  delay:5, steps:[[235,0],[264,0]]},
+							run:{   delay:3, steps:[[321,0],[348,0]]},
+							jump:{  delay:0, steps:[[294,30]]},
+							fall:{  delay:0, steps:[[264,30]]}
 						},
-						walkR:{
-							turn:5,
-							steps:[[235,0],[264,0]]
-						},
-						runR:{
-							turn:3,
-							steps:[[321,0],[348,0]]
-						},
-						jumpR:{
-							turn:0,
-							steps:[[294,30]]
-						},
-						standL:{
-							turn:0,
-							steps:[[199,0]]
-						},
-						walkL:{
-							turn:5,
-							steps:[[198,0],[169,0]]
-						},
-						runL:{
-							turn:3,
-							steps:[[111,0],[84,0]]
-						},
-						jumpL:{
-							turn:0,
-							steps:[[139,30]]
+						L:{
+							stand:{ delay:0, steps:[[199,0]]},
+							walk:{  delay:5, steps:[[198,0],[169,0]]},
+							run:{   delay:3, steps:[[111,0],[84,0]]},
+							jump:{  delay:0, steps:[[139,30]]},
+							fall:{  delay:0, steps:[[168,30]]}
 						}
 					}
-				})
+				});
+				game.addSprite({
+					id: "block01",
+					source: "img/blocks.png",
+					type: "block",
+					gravity: 0,
+					pos: [100,200],
+					size:[16,16],
+					sprite: {
+						stand:{ delay:3, steps:[[0,0],[0,0],[0,0],[0,0],[0,0],[51,0],[34,0],[17,0]]}
+					}
+				});
+				game.addSprite({
+					id: "block02",
+					source: "img/blocks.png",
+					type: "block",
+					gravity: 0,
+					pos: [116,200],
+					size:[16,16],
+					sprite: {
+						stand:{ delay:0, steps:[[0,17]]}
+					}
+				});
+				game.addSprite({
+					id: "block03",
+					source: "img/blocks.png",
+					type: "block",
+					gravity: 0,
+					pos: [116,240],
+					size:[16,16],
+					sprite: {
+						stand:{ delay:0, steps:[[17,17]]}
+					}
+				});
+				
 			}
 		</script>
 	</head>
-	<body onload="loadGame('fznBoard');">
-		<canvas id="fznBoard" width="300" height="300"></canvas>
+	<body onload="loadGame();">
+		<canvas id="board" width="300" height="300"></canvas>
 	</body>
 </html>
