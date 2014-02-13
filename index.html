@@ -3,72 +3,117 @@
 	<head>
 		<title>Canvas Sprite Tests</title>
 		<script type="text/javascript" src="js/fznPlatform.js"></script>
+		<script type="text/javascript" src="js/fznLevels.js"></script>
 		<script type="text/javascript" src="js/fznSprites.js"></script>
+		<script type="text/javascript" src="js/fznBackgrounds.js"></script>
 		<script>
 			var game,luigi;
 			function loadGame(){
 				game = new fzn.Game("board");
-				game.floor = 260;
-				game.addBackground("img/background.png",[0,-67]);
-				game.addSprite({
-					id: "luigi",
-					source: "img/luigi-sprites.png",
-					type: "user",
-					collide: {
-						block:true
+				game.define("background",[
+					{
+						name:"ground",
+						size: [16,16],
+						repeat: "repeat-x",
+						source:"img/ground.jpg"
 					},
-					size:[16,22],
-					sprite: {
-						R:{
-							stand:{ delay:0, steps:[[235,0]]},
-							walk:{  delay:5, steps:[[235,0],[264,0]]},
-							run:{   delay:3, steps:[[321,0],[348,0]]},
-							jump:{  delay:0, steps:[[294,30]]},
-							fall:{  delay:0, steps:[[264,30]]}
+					{
+						name:"hills",
+						size: [1887,201],
+						repeat: "repeat-x",
+						source:"img/hills.png"
+					},
+					{
+						name:"sky",
+						size: [2,223],
+						repeat: "repeat-x",
+						source:"img/sky.png"
+					}
+				]);
+				game.define("sprite",[
+					{
+						name: "luigi",
+						source: "img/luigi-sprites.png",
+						type: "user",
+						gravity: 0.8,
+						collide: {
+							block: function(self,pos,item,collision){
+								//self = the sprite
+								//item = the sprite object that collided
+								//collision = a report of collisions
+								//pos = array with position where collided
+							},
+							deadly: function(self){
+								self.please("die");
+							}
 						},
-						L:{
-							stand:{ delay:0, steps:[[199,0]]},
-							walk:{  delay:5, steps:[[198,0],[169,0]]},
-							run:{   delay:3, steps:[[111,0],[84,0]]},
-							jump:{  delay:0, steps:[[139,30]]},
-							fall:{  delay:0, steps:[[168,30]]}
+						size:[16,22],
+						sprite: {
+							R:{
+								stand:{ delay:0, steps:[[234,0]]},
+								walk:{  delay:5, steps:[[234,0],[263,0]]},
+								run:{   delay:3, steps:[[321,0],[348,0]]},
+								jump:{  delay:0, steps:[[294,30]]},
+								fall:{  delay:0, steps:[[264,30]]}
+							},
+							L:{
+								stand:{ delay:0, steps:[[198,0]]},
+								walk:{  delay:5, steps:[[198,0],[169,0]]},
+								run:{   delay:3, steps:[[111,0],[84,0]]},
+								jump:{  delay:0, steps:[[139,30]]},
+								fall:{  delay:0, steps:[[168,30]]}
+							},
+							dead:{  delay:3, steps:[[0,57],[432,57]]}
+						}
+					},
+					{
+						name: "qBlock",
+						source: "img/blocks.png",
+						type: "block",
+						size:[16,16],
+						sprite: {
+							stand:{ delay:3, steps:[[0,0],[0,0],[0,0],[0,0],[0,0],[51,0],[34,0],[17,0]]}
+						}
+					},
+					{
+						name: "eBlock",
+						source: "img/blocks.png",
+						type: "deadly",
+						size:[16,16],
+						sprite: {
+							stand:{ delay:0, steps:[[0,17]]}
+						}
+					},
+					{
+						name: "block",
+						source: "img/blocks.png",
+						type: "block",
+						size:[16,16],
+						sprite: {
+							stand:{ delay:0, steps:[[17,17]]}
 						}
 					}
+				]);
+				game.define("level",{
+					name: "level01",
+					floor: 262,
+					color: "#5088A0",
+					sprites:[
+						{copyOf: "luigi",  id: "luigi"},
+						{copyOf: "qBlock", params: {pos:[100,200]}},
+						{copyOf: "eBlock", params: {pos:[116,200]}},
+						{copyOf: "block",  params: {pos:[132,200]}},
+						{copyOf: "block",  params: {pos:[148,200]}},
+						{copyOf: "block",  params: {pos:[68,232]}},
+						{copyOf: "block",  params: {pos:[176,232]}}
+					],
+					backgrounds:[
+						{copyOf: "sky", id: "mainSky", params: {pos:[0,61]}},
+						{copyOf: "hills", id: "mainhills", params: {pos:[0,83]}},
+						{copyOf: "ground", id: "mainGround", params: {pos:[0,284]}}
+					]
 				});
-				game.addSprite({
-					id: "block01",
-					source: "img/blocks.png",
-					type: "block",
-					gravity: 0,
-					pos: [100,200],
-					size:[16,16],
-					sprite: {
-						stand:{ delay:3, steps:[[0,0],[0,0],[0,0],[0,0],[0,0],[51,0],[34,0],[17,0]]}
-					}
-				});
-				game.addSprite({
-					id: "block02",
-					source: "img/blocks.png",
-					type: "block",
-					gravity: 0,
-					pos: [116,200],
-					size:[16,16],
-					sprite: {
-						stand:{ delay:0, steps:[[0,17]]}
-					}
-				});
-				game.addSprite({
-					id: "block03",
-					source: "img/blocks.png",
-					type: "block",
-					gravity: 0,
-					pos: [116,240],
-					size:[16,16],
-					sprite: {
-						stand:{ delay:0, steps:[[17,17]]}
-					}
-				});
-				
+				game.loadLevel("level01");
 			}
 		</script>
 	</head>
