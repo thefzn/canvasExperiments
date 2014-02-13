@@ -11,22 +11,15 @@ fzn.Game = function(canvasID){
 	this.canvas = (typeof this.cnv.getContext != "undefined" ) ? this.cnv.getContext('2d'): false;
 	this.loadQueue = 0;
 	this.start = true;
-	this.user = false;
-	this.keys = [];
-	this.sprites = {};
-	this.spriteTypes = {};
-	this.backgrounds = [];
-	this.floor = this.cnv.height;
+	this.level = false;
 	this.turn = 0;
 	this.init();
 }
 fzn.Game.prototype = {
 	init: function(){
 		if(!this.canvas){
-			console.log("canvas not supported or error loading")
+			console.log("Canvas not supported or error loading")
 			return false;
-		}else{
-			console.log(this.canvas)
 		}
 		this.go();
 	},
@@ -35,12 +28,10 @@ fzn.Game.prototype = {
 		if(!this.start){
 			return false;
 		}
-		if(this.loadQueue == 0){
+		if(this.loadQueue == 0 && typeof this.level == "object" && this.level){
 			this.clear();
 			this.turn = (this.turn < 100) ? this.turn + 1 : 0;
-			this.drawBackgrounds();
-			this.userInput();
-			this.drawSprites();
+			this.level.go();
 		}
 		window.requestAnimFrame(function() {
           self.go();
@@ -56,92 +47,94 @@ fzn.Game.prototype = {
 	},
 	clear: function(){
 		this.canvas.clearRect(0,0,this.cnv.width,this.cnv.height);
+		if(typeof this.level != "undefined" && this.level){
+			this.canvas.save();
+			this.canvas.fillStyle = this.level.color;
+			this.canvas.fillRect(0,0,this.cnv.width,this.cnv.height);
+			this.canvas.restore();
+		}
 		
 	},
-	userInput: function(){
-		if(this.user){
-			if(typeof this.keys[32] != "undefined" && this.keys[32]){
-				this.user.please("jump");
+	define: function(type,params){
+		var i,len,target,
+			type = type || false;
+		if(!type){
+			return false;
+		}
+		this.libs = this.libs || {};
+		target = type.toLowerCase();
+		this.libs[target] = this.libs[target] || new fzn.Catalog(this,type.toLowerCase());
+		if(params instanceof Array){
+			for(i=0,len=params.length;i<len;i++){
+				this.libs[target].store(params[i]);
 			}
-			if(typeof this.keys[37] != "undefined" && this.keys[37]){
-				this.user.turn("L");
-				this.user.please("move");
-			}
-			if(typeof this.keys[39] != "undefined" && this.keys[39]){
-				this.user.turn("R");
-				this.user.please("move");
-			}
-		}
-	},
-	drawBackgrounds: function(){
-		var i,len, item;
-		// create pattern
-		for(i=0,len=this.backgrounds.length;i<len;i++){
-			item = this.backgrounds[i];
-			this.canvas.drawImage(
-				item.img,
-				item.pos[0],
-				item.pos[1]
-			);
-		}
-	},
-	drawSprites: function(){
-		var s;
-		for(s in this.sprites){
-			this.sprites[s].go();
-		}
-	},
-	addSprite: function(params){
-		var sprite = new fzn.Sprite(this,params),
-			type = params.type || "generic";
-		this.sprites[sprite.id] = sprite;
-		this.spriteTypes[type] = this.spriteTypes[type] || [];
-		this.spriteTypes[type].push(sprite.id);
-		if(sprite.type == "user"){
-			this.user = sprite;
-			this.attachEvents();
-		}
-		this.updateCollitions();
-	},
-	addBackground: function(source,pos){
-		var src = source || false,
-			self = this,
-			bk;
-		if(src){
-			bk = new Image()
-			bk.addEventListener("load", function() {
-				self.loadQueue--;
-			}, false);
-			this.loadQueue++;
-			this.backgrounds.push({
-				img: bk,
-				pos: pos || [0,0]
-			});
-			bk.src = src;
-		}
-	},
-	updateCollitions: function(){
-		var s;
-		for(s in this.sprites){
-			this.sprites[s].getCollideItems();
-		}
-	},
-	attachEvents: function(){
-		var self = this;
-		document.addEventListener( "keydown", function(e){self.keys[e.which] = true}, true);
-		document.addEventListener( "keyup", function(e){delete self.keys[e.which]}, true);
-	},
-	getRes: function(){
-		var res;
-		if(document.getElementById("fznResources") == null){
-			res = document.createElement("div")
-			res.id = "fznResources";
-			document.body.appendChild(res);
-			this.res = res;
 		}else{
-			this.res = document.getElementById("fznResources");
-			this.res.style.display = "none";
+			this.libs[target].store(params);
 		}
-		return res;
+	},
+	loadLevel: function(lvl,params){
+		this.level = this.libs.level.generate(lvl,false,params);
+		this.level.reset();
+	}
+}
+fzn.Catalog = function(game,type){
+	this.type = type || "generic";
+	this.items = {};
+	this.game = game;
+}
+fzn.Catalog.prototype = {
+	store: function(params){
+		var par = params || false;
+		
+		if(par && typeof par.name != "undefined"){
+			this.items[par.name] = par;
+		}
+	},
+	generate: function(name,id,params){
+		var n = name || false,
+			p = {},
+			itm = this.items[n],
+			def;
+		if(!n || typeof this.items[n] == "undefined"){
+			return false;
+		}
+		params = params || {};
+		p.id = id || params.id || this.type+"_"+name+"_"+Math.round(Math.random()*10000);
+		p.source = params.source || itm.source || "";
+		p.pos = params.pos || itm.pos || [0,0];
+		p.size = params.size || itm.size || [10,10];
+		p.data = params.data || itm.data || {};
+		
+		switch(this.type){
+			case "sprite":
+				p.type = params.type || itm.type || "generic";
+				p.gravity = params.gravity || itm.gravity || 0;
+				p.sprite = params.sprite || itm.sprite || {};
+				p.collide = params.collide || itm.collide || [];
+				p.action = params.action || itm.action || "stand";
+				return new fzn.Sprite(this.game,p);
+			break;
+			case "background":
+				p.fixed = params.fixed || itm.fixed || false;
+				p.repeat = params.repeat || itm.repeat || false;
+				return new fzn.Background(this.game,p);
+			break;
+			case "level":
+				p.size = params.size || itm.size || [this.game.cnv.width,this.game.cnv.height];
+				p.floor = params.floor || itm.floor || this.game.cnv.height;
+				p.color = params.color || itm.color || "white";
+				p.sprites = params.sprites || itm.sprites || [];
+				p.backgrounds = params.backgrounds || itm.backgrounds || [];
+				return new fzn.Level(this.game,p);
+			break;
+			default:
+				for(def in itm){
+					p[def] = itm[def];
+				}
+				for(def in params){
+					p[def] = params[def];
+				}
+				return p;
+		}
 	}
 }
