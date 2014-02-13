@@ -3,32 +3,36 @@ fzn.Sprite = function (game,params){
 	if(game instanceof fzn.Game){
 		// Data Vars
 		this.game = game;
-		this.size = params.size || [10,10];
-		this.type = params.type || false;
-		this.pos = params.pos || [0,0];
-		this.id = params.id || "fznSP_"+Math.round(Math.random()*100000);
+		this.level = game.level;
+		this.data = params.data;
+		this.size = params.size;
+		this.type = params.type;
+		this.pos = params.pos;
+		this.id = params.id;
+		this.sprite = params.sprite;
+		this.source = params.source;
+		this.alive = true;
 		
 		// Movement Vars
-		this.gravity = (typeof params.gravity == "undefined") ? 1.5 : params.gravity;
+		this.gravity = params.gravity;
 		this.velDown = 0;
 		this.maxVelDown = 8;
 		this.movement = 0.5,
 		this.velHor = 0;
 		this.maxVelHor = 5;
 		this.dir = "R";
-		this.jumpForce = 14;
-		this.floor = this.game.floor - this.size[1];
-		this.collide = params.collide || [];
+		this.jumpForce = 10;
+		this.floor = this.level.floor - this.size[1];
+		this.collide = params.collide;
 		this.collideItems = [];
 		
 		// Animation Vars
-		this.action = params.action || "stand";
+		this.action = params.action;
 		this.frame = 0;
-		this.params = params;
 		this.jumping = false;
 		this.falling = false;
 		this.moving = false;
-		this.abilities = [];
+		this.abilities = {};
 		this.init();
 	}else{
 		return false;
@@ -38,7 +42,7 @@ fzn.Sprite.prototype = {
 	init: function(){
 		this.mapAbilities();
 		// Generate a canvas for Sprite
-		this.loadSheet(this.params.source);
+		this.loadSheet(this.source);
 	},
 	go: function(){
 		var frame = this.frame,
@@ -60,26 +64,30 @@ fzn.Sprite.prototype = {
 				}
 			}
 		}
-		if(this.moving){
-			if(this.velHor <= 0){
-				this.velHor = 0;
-				this.moving = false;
-				frame = 0;
-				this.action = "stand";
-			}else{
-				newposx = (this.dir == "R") ? newposx + this.velHor :  newposx - this.velHor;
-				skills = this.abilities[this.dir];
-				if(this.velHor > (this.maxVelHor/1.1)){
-					this.action = skills["run"] || skills["walk"] || skills["stand"];
+		if(this.alive){
+			if(this.moving){
+				if(this.velHor <= 0){
+					this.velHor = 0;
+					this.moving = false;
+					frame = 0;
+					this.action = "stand";
 				}else{
-					this.action = skills["walk"] || skills["run"] || skills["stand"];
+					newposx = (this.dir == "R") ? newposx + this.velHor :  newposx - this.velHor;
+					skills = this.abilities[this.dir];
+					if(this.velHor > (this.maxVelHor/1.1)){
+						this.action = skills["run"] || skills["walk"] || skills["stand"];
+					}else{
+						this.action = skills["walk"] || skills["run"] || skills["stand"];
+					}
+					this.velHor = this.velHor - (this.movement/2);
 				}
-				this.velHor = this.velHor - (this.movement/2);
 			}
+			this.pos = this.checkCollide(newposx,newposy);
+		}else{
+			this.pos = [newposx,newposy];
 		}
-		this.pos = this.checkCollide(newposx,newposy);
-		dir = this.params.sprite[this.dir];
-		this.active = (this.jumping) ? dir["jump"] || dir["stand"] : (this.falling) ? dir["fall"] || dir["jump"] || dir["stand"] : dir[this.action];
+		dir = this.sprite[this.dir];
+		this.active = (!this.alive) ? dir["dead"] || dir["stand"] : (this.jumping) ? dir["jump"] || dir["stand"] : (this.falling) ? dir["fall"] || dir["jump"] || dir["stand"] : dir[this.action] || dir["stand"];
 		if(this.active.delay != 0 && this.game.turn % this.active.delay == 0){
 			frame++;
 		}
@@ -87,7 +95,7 @@ fzn.Sprite.prototype = {
 		this.redraw();
 	},
 	please: function(newState){
-		if(!this.game.start){
+		if(!this.game.start || !this.alive){
 			return false;
 		}
 		switch(newState){
@@ -102,15 +110,21 @@ fzn.Sprite.prototype = {
 				this.velHor += this.movement;
 				this.velHor = (this.velHor > this.maxVelHor) ? this.maxVelHor : this.velHor;
 			break
+			case "die":
+				this.alive = false;
+				this.floor = this.game.cnv.height + this.size[1] + 10;
+				this.velDown = 0-this.jumpForce;
+				this.action = "dead";
+			break
 			default:
-				if(typeof this.params.sprite[this.dir][newState] != "undefined"){
+				if(typeof this.sprite[this.dir][newState] != "undefined"){
 					this.frame = 0;
 					this.action = newState;
 				}
 		}
 	},
 	turn: function(dir){
-		if(!this.game.start){
+		if(!this.game.start || !this.alive){
 			return false;
 		}
 		var d = dir || false;
@@ -133,59 +147,81 @@ fzn.Sprite.prototype = {
 	},
 	checkCollide: function(posx,posy){
 		var i,len,itm,
-			//indx = (axis=="y") ? 1 : 0,
-			itmsOnDir = [];
+			tolx = 5,
+			toly = 10,
+			coll = {
+				T:false,
+				B:false,
+				L:false,
+				R:false
+			},
+			itmsOnDir = [],
+			newpos = [Math.round(posx),Math.round(posy)];
 		if(this.collideItems.length>0){
 			for(i=0,len=this.collideItems.length;i<len;i++){
-				itm = this.game.sprites[this.collideItems[i]];
-				if((posx+this.size[0]) > itm.pos[0] && posx  < (itm.pos[0]+itm.size[0]) && (posy+this.size[1]) > itm.pos[1] && posy  < (itm.pos[1]+itm.size[1])){
-					if(this.jumping || this.falling){
-						posy = (posy < itm.pos[1]) ? itm.pos[1] - this.size[1] : itm.pos[1] + itm.size[1];
-						this.velDown = 0;
-						this.falling = false;
-						this.jumping = false;
-					}else{
-						posx = (posx < itm.pos[0]) ? itm.pos[0] - this.size[0] : itm.pos[0] + itm.size[0];
-						this.velHor == 0;
+				itm = this.level.sprites[this.collideItems[i]];
+				if((posx+this.size[0]-tolx) > itm.pos[0] && (posx + tolx)  < (itm.pos[0]+itm.size[0])){
+					coll.B = ((posy+this.size[1]) > itm.pos[1] && (posy+this.size[1]) < (itm.pos[1]+itm.size[1] )) ? true : false;
+					coll.T = (posy  < (itm.pos[1]+itm.size[1]) && posy  > itm.pos[1]) ? true : false;
+				}
+				if((posy+this.size[1]-toly) > itm.pos[1] && (posy + toly)  < (itm.pos[1]+itm.size[1])){
+					coll.R = ((posx+this.size[0]) > itm.pos[0] && (posx+this.size[0]) < (itm.pos[0]+itm.size[0] )) ? true : false;
+					coll.L = (posx  < (itm.pos[0]+itm.size[0]) && posx  > itm.pos[0]) ? true : false;
+				}
+				if(coll.B || coll.T || coll.R || coll.L){
+					newpos = this.onCollide(itm,coll,posx,posy);
+					//Execute Custom Collide Function
+					if(typeof this.collide[itm.type] == "function"){
+						this.collide[itm.type](this,[posx,posy],itm,coll);
 					}
 					break;
 				}
 			}
 		}
-		return [posx,posy];
+		return newpos;
+	},
+	onCollide: function(itm,coll,posx,posy){
+		if(coll.B || coll.T){
+			posy = (posy < itm.pos[1]) ? itm.pos[1] - this.size[1] : itm.pos[1] + itm.size[1];
+			this.velDown = 0;
+			this.falling = false;
+			this.jumping = false;
+		}else if(coll.R || coll.L){
+			posx = (coll.R) ? itm.pos[0] - this.size[0] : itm.pos[0] + itm.size[0];
+			this.velHor == 0;
+		}
+		return [Math.round(posx),Math.round(posy)];
 	},
 	getCollideItems: function(){
 		var type, sps;
 		this.collideItems = [];
+		this.level = game.level;
 		for(type in this.collide){
-			for(sps in this.game.spriteTypes[type]){
-				this.collideItems.push(this.game.spriteTypes[type][sps])
+			for(sps in this.level.spriteTypes[type]){
+				this.collideItems.push(this.level.spriteTypes[type][sps])
 			}
 		}
 	},
 	mapAbilities: function(){
-		var item,
-			temp = {
-				L:{},
-				R:{}
-			},
-			sprite = this.params.sprite || false;
-		if(!sprite){
+		var item
+		if(typeof this.sprite == "undefined"){
 			return false
 		}
-		if(typeof sprite.R == "undefined"){
-			for(item in sprite){
-				temp.L[item] = sprite[item];
-				temp.R[item] = sprite[item];
+		this.sprite.L = this.sprite.L || {};
+		this.sprite.R = this.sprite.R || {};
+		
+		for(item in this.sprite){
+			if(item != "L" && item != "R"){
+				this.sprite.L[item] = this.sprite[item];
+				this.sprite.R[item] = this.sprite[item];
 			}
-			this.params.sprite = temp;
 		}
-		this.abilities["L"] = [];
-		this.abilities["R"] = [];
-		for(item in sprite.L){
+		this.abilities["L"] = {};
+		this.abilities["R"] = {};
+		for(item in this.sprite.L){
 			this.abilities["L"][item] = item;
 		}
-		for(item in sprite.R){
+		for(item in this.sprite.R){
 			this.abilities["R"][item] = item;
 		}
 	},
