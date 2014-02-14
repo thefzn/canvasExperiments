@@ -6,10 +6,12 @@ fzn.Level = function (game,params){
 		this.id = params.id;
 		this.data = params.data;
 		this.size = params.size;
+		this.pos = params.pos;
 		this.color = params.color;
 		this.items = {
 			sprites: params.sprites,
 			backgrounds: params.backgrounds,
+			walls: params.walls
 		}
 		this.user = false;
 		this.keys = [];
@@ -40,9 +42,11 @@ fzn.Level.prototype = {
 		// Custom code
 	},
 	go: function(){
+		this.checkPosition();
 		this.draw("Background");
 		this.userInput();
 		this.draw("Sprite");
+		this.draw("Wall");
 	},
 	draw: function(type){
 		var item,
@@ -51,6 +55,17 @@ fzn.Level.prototype = {
 			for(item in target){
 				target[item].go();
 			}
+		}
+	},
+	checkPosition: function(){
+		var movedX,posX,movedY,posY;
+		if(this.user){
+			posX = this.user.pos[0] - (this.pos[0]+(this.game.cnv.width/2));
+			posY = this.user.pos[1] - (this.pos[1]+(this.game.cnv.height/2));
+			movedX = this.pos[0] + posX;
+			movedY = this.pos[1] + posY;
+			this.pos[0] = (!this.size[0]) ? movedX : (movedX > (this.size[0]-this.game.cnv.width)) ? this.size[0]-this.game.cnv.width : (movedX >= 0) ? movedX : 0 ;
+			this.pos[1] = (!this.size[1]) ? movedY : (movedY > (this.size[1]-this.game.cnv.height)) ? this.size[1]-this.game.cnv.height : (movedY >= 0) ? movedY : 0 ;
 		}
 	},
 	add: function(type,name,id,params){
