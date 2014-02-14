@@ -6,10 +6,20 @@
 		<script type="text/javascript" src="js/fznLevels.js"></script>
 		<script type="text/javascript" src="js/fznSprites.js"></script>
 		<script type="text/javascript" src="js/fznBackgrounds.js"></script>
+		<script type="text/javascript" src="js/fznWalls.js"></script>
 		<script>
 			var game,luigi;
 			function loadGame(){
 				game = new fzn.Game("board");
+				game.define("wall",[
+					{
+						name:"wall"
+					},
+					{
+						name:"hole",
+						negative:true
+					}]
+				)
 				game.define("background",[
 					{
 						name:"ground",
@@ -20,7 +30,7 @@
 					{
 						name:"hills",
 						size: [1887,201],
-						repeat: "repeat-x",
+						repeat: false,
 						source:"img/hills.png"
 					},
 					{
@@ -28,6 +38,14 @@
 						size: [2,223],
 						repeat: "repeat-x",
 						source:"img/sky.png"
+					},
+					{
+						name:"clouds",
+						size: [267,113],
+						opacity:0.6,
+						repeat: false,
+						fixed: 0.5,
+						source:"img/clouds.png"
 					}
 				]);
 				game.define("sprite",[
@@ -78,7 +96,7 @@
 					{
 						name: "eBlock",
 						source: "img/blocks.png",
-						type: "deadly",
+						type: "block",
 						size:[16,16],
 						sprite: {
 							stand:{ delay:0, steps:[[0,17]]}
@@ -92,25 +110,72 @@
 						sprite: {
 							stand:{ delay:0, steps:[[17,17]]}
 						}
+					},
+					{
+						name: "spike",
+						source: "img/enemies.png",
+						type: "deadly",
+						collide: {
+						//	block:true
+						},
+						gravity: 0.6,
+						size:[18,18],
+						sprite: {
+							stand:{ delay:5, steps:[[0,77],[19,77]]}
+						}
 					}
 				]);
 				game.define("level",{
 					name: "level01",
-					floor: 262,
+					floor: 285,
 					color: "#5088A0",
+					size: [600,300],
 					sprites:[
 						{copyOf: "luigi",  id: "luigi"},
+						{copyOf: "spike",  params: {pos:[100,200]}},
+						/*
+						{copyOf: "spike",  params: {pos:[120,200]}},
+						{copyOf: "spike",  params: {pos:[140,200]}},
+						{copyOf: "spike",  params: {pos:[160,200]}},
+						{copyOf: "spike",  params: {pos:[180,200]}},
+						{copyOf: "spike",  params: {pos:[200,200]}},
+						{copyOf: "spike",  params: {pos:[220,200]}},
+						{copyOf: "spike",  params: {pos:[240,200]}},
+						{copyOf: "spike",  params: {pos:[260,200]}},
+						{copyOf: "spike",  params: {pos:[280,200]}},
+						{copyOf: "spike",  params: {pos:[300,200]}},
+						{copyOf: "spike",  params: {pos:[320,200]}},
+						{copyOf: "spike",  params: {pos:[340,200]}},
+						{copyOf: "spike",  params: {pos:[360,200]}},
+						{copyOf: "spike",  params: {pos:[380,200]}},
+						{copyOf: "spike",  params: {pos:[400,200]}},
+						{copyOf: "spike",  params: {pos:[420,200]}},
+						{copyOf: "spike",  params: {pos:[440,200]}},
+						{copyOf: "spike",  params: {pos:[460,200]}},
+						{copyOf: "spike",  params: {pos:[480,200]}},
+						{copyOf: "spike",  params: {pos:[500,200]}},
+						{copyOf: "spike",  params: {pos:[520,200]}},
+						{copyOf: "spike",  params: {pos:[540,200]}},
+						{copyOf: "spike",  params: {pos:[560,200]}},
+						*/
 						{copyOf: "qBlock", params: {pos:[100,200]}},
 						{copyOf: "eBlock", params: {pos:[116,200]}},
 						{copyOf: "block",  params: {pos:[132,200]}},
 						{copyOf: "block",  params: {pos:[148,200]}},
 						{copyOf: "block",  params: {pos:[68,232]}},
-						{copyOf: "block",  params: {pos:[176,232]}}
+						{copyOf: "block",  params: {pos:[200,200]}},
+						{copyOf: "block",  params: {pos:[300,200]}},
+						{copyOf: "block",  params: {pos:[400,200]}},
+						{copyOf: "block",  params: {pos:[500,200]}}
 					],
 					backgrounds:[
-						{copyOf: "sky", id: "mainSky", params: {pos:[0,61]}},
-						{copyOf: "hills", id: "mainhills", params: {pos:[0,83]}},
+						{copyOf: "sky", id: "mainSky", params: {pos:[0,100]}},
+						{copyOf: "clouds", id: "mainClouds", params: {pos:[50,170]}},
+						{copyOf: "hills", id: "mainHills", params: {pos:[0,83]}},
 						{copyOf: "ground", id: "mainGround", params: {pos:[0,284]}}
+					],
+					walls:[
+						{copyOf: "wall", params: {pos:[116,100],size:[10,100]}}
 					]
 				});
 				game.loadLevel("level01");
