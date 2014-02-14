@@ -8,6 +8,7 @@ fzn.Sprite = function (game,params){
 		this.size = params.size;
 		this.type = params.type;
 		this.pos = params.pos;
+		this.opacity = params.opacity;
 		this.id = params.id;
 		this.sprite = params.sprite;
 		this.source = params.source;
@@ -22,7 +23,7 @@ fzn.Sprite = function (game,params){
 		this.maxVelHor = 5;
 		this.dir = "R";
 		this.jumpForce = 10;
-		this.floor = this.level.floor - this.size[1];
+		this.floor = this.level.floor;
 		this.collide = params.collide;
 		this.collideItems = [];
 		
@@ -49,11 +50,11 @@ fzn.Sprite.prototype = {
 			newposx = this.pos[0],
 			newposy = this.pos[1],
 			dir,skills;
-		if(this.gravity>0){
+		if(this.gravity != 0){
 			this.velDown = this.velDown + this.gravity;
 			this.velDown = (this.velDown > this.maxVelDown) ? this.maxVelDown : this.velDown;
 			newposy = newposy+this.velDown;
-			newposy = (newposy > this.floor) ? this.floor : newposy;
+			newposy = (newposy > (this.floor-this.size[1])) ? this.floor-this.size[1] : newposy;
 			this.jumping = false;
 			this.falling = false;
 			if(newposy != this.pos[1]){
@@ -100,7 +101,7 @@ fzn.Sprite.prototype = {
 		}
 		switch(newState){
 			case "jump":
-				if(!this.jumping && !this.falling){
+				if(!this.jumping && !this.falling && this.velDown > 0){
 					this.frame = 0;
 					this.velDown = 0-this.jumpForce;
 				}
@@ -112,7 +113,7 @@ fzn.Sprite.prototype = {
 			break
 			case "die":
 				this.alive = false;
-				this.floor = this.game.cnv.height + this.size[1] + 10;
+				this.floor = this.level.size[1] + this.size[1] + 10;
 				this.velDown = 0-this.jumpForce;
 				this.action = "dead";
 			break
@@ -133,61 +134,94 @@ fzn.Sprite.prototype = {
 		}
 	},
 	redraw: function(){
+		if(this.opacity != 1){
+			this.game.canvas.save();
+			this.game.canvas.globalAlpha = this.opacity;
+		}
+		this.pos[0] = (!this.level.size[0]) ? this.pos[0] : (this.pos[0] < 0) ? 0 : (this.pos[0] > (this.level.size[0]-this.size[0])) ? this.level.size[0]-this.size[0] : this.pos[0];
 		this.game.canvas.drawImage(
 			this.sheet,
 			this.active.steps[this.frame][0],
 			this.active.steps[this.frame][1],
 			this.size[0],
 			this.size[1],
-			this.pos[0],
-			this.pos[1],
+			this.pos[0] - this.level.pos[0],
+			this.pos[1] - this.level.pos[1],
 			this.size[0],
 			this.size[1]
 		);
+		if(this.opacity != 1){
+			this.game.canvas.restore();
+		}
 	},
 	checkCollide: function(posx,posy){
 		var i,len,itm,
 			tolx = 5,
 			toly = 10,
 			coll = {
-				T:false,
-				B:false,
-				L:false,
-				R:false
+				T:[],
+				B:[],
+				L:[],
+				R:[]
 			},
 			itmsOnDir = [],
 			newpos = [Math.round(posx),Math.round(posy)];
 		if(this.collideItems.length>0){
 			for(i=0,len=this.collideItems.length;i<len;i++){
-				itm = this.level.sprites[this.collideItems[i]];
-				if((posx+this.size[0]-tolx) > itm.pos[0] && (posx + tolx)  < (itm.pos[0]+itm.size[0])){
-					coll.B = ((posy+this.size[1]) > itm.pos[1] && (posy+this.size[1]) < (itm.pos[1]+itm.size[1] )) ? true : false;
-					coll.T = (posy  < (itm.pos[1]+itm.size[1]) && posy  > itm.pos[1]) ? true : false;
-				}
-				if((posy+this.size[1]-toly) > itm.pos[1] && (posy + toly)  < (itm.pos[1]+itm.size[1])){
-					coll.R = ((posx+this.size[0]) > itm.pos[0] && (posx+this.size[0]) < (itm.pos[0]+itm.size[0] )) ? true : false;
-					coll.L = (posx  < (itm.pos[0]+itm.size[0]) && posx  > itm.pos[0]) ? true : false;
-				}
-				if(coll.B || coll.T || coll.R || coll.L){
-					newpos = this.onCollide(itm,coll,posx,posy);
-					//Execute Custom Collide Function
-					if(typeof this.collide[itm.type] == "function"){
-						this.collide[itm.type](this,[posx,posy],itm,coll);
+				itm = this.level.sprites[this.collideItems[i]] || this.level.walls[this.collideItems[i]] || false;
+				if(itm){
+					if((posx+this.size[0]-tolx) > itm.pos[0] && (posx + tolx)  < (itm.pos[0]+itm.size[0])){
+						if((posy+this.size[1]) > itm.pos[1] && (posy+this.size[1]) < (itm.pos[1]+itm.size[1] )){
+							coll.B.push(itm);
+						}
+						if(posy  < (itm.pos[1]+itm.size[1]) && posy  > itm.pos[1]){
+							coll.T.push(itm);
+						}
 					}
-					break;
+					if((posy+this.size[1]-toly) > itm.pos[1] && (posy + toly)  < (itm.pos[1]+itm.size[1])){
+						if((posx+this.size[0]) > itm.pos[0] && (posx+this.size[0]) < (itm.pos[0]+itm.size[0] )){
+							coll.R.push(itm)
+						}
+						if(posx  < (itm.pos[0]+itm.size[0]) && posx  > itm.pos[0]){
+							coll.L.push(itm)
+						}
+					}
+				}
+			}
+			if(coll.B.length > 0 || coll.T.length > 0 || coll.R.length > 0 || coll.L.length > 0){
+				newpos = this.onCollide(coll,posx,posy);
+				//Execute Custom Collide Function
+				if(typeof this.collide[itm.type] == "function"){
+					this.collide[itm.type](this,[posx,posy],coll);
 				}
 			}
 		}
 		return newpos;
 	},
-	onCollide: function(itm,coll,posx,posy){
-		if(coll.B || coll.T){
+	onCollide: function(coll,posx,posy){
+		var itm;
+		if(coll.B.length > 0){
+			itm = coll.B[0];
+			posy = (posy < itm.pos[1]) ? itm.pos[1] - this.size[1] : itm.pos[1] + itm.size[1];
+			this.velDown = 0.01;
+			this.falling = false;
+			this.jumping = false;
+		}
+		if(coll.T.length > 0){
+			itm = coll.T[0];
 			posy = (posy < itm.pos[1]) ? itm.pos[1] - this.size[1] : itm.pos[1] + itm.size[1];
 			this.velDown = 0;
 			this.falling = false;
 			this.jumping = false;
-		}else if(coll.R || coll.L){
-			posx = (coll.R) ? itm.pos[0] - this.size[0] : itm.pos[0] + itm.size[0];
+		}
+		if(coll.R.length > 0){
+			itm = coll.R[0];
+			posx = itm.pos[0] - this.size[0];
+			this.velHor == 0;
+		}
+		if(coll.L.length > 0){
+			itm = coll.L[0];
+			posx = itm.pos[0] + itm.size[0];
 			this.velHor == 0;
 		}
 		return [Math.round(posx),Math.round(posy)];
@@ -199,6 +233,11 @@ fzn.Sprite.prototype = {
 		for(type in this.collide){
 			for(sps in this.level.spriteTypes[type]){
 				this.collideItems.push(this.level.spriteTypes[type][sps])
+			}
+		}
+		for(sps in this.level.walls){
+			if(!sps.negative){
+				this.collideItems.push(this.level.walls[sps].id)
 			}
 		}
 	},
