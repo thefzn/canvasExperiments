@@ -100,8 +100,9 @@ fzn.Catalog.prototype = {
 		}
 		params = params || {};
 		p.id = id || params.id || this.type+"_"+name+"_"+Math.round(Math.random()*10000);
-		p.source = params.source || itm.source || "";
+		p.source = params.source || itm.source || false;
 		p.pos = params.pos || itm.pos || [0,0];
+		p.opacity = (typeof params.opacity != "undefined") ? params.opacity : (typeof itm.opacity != "undefined") ?  itm.opacity : 1;
 		p.size = params.size || itm.size || [10,10];
 		p.data = params.data || itm.data || {};
 		
@@ -124,8 +125,14 @@ fzn.Catalog.prototype = {
 				p.floor = params.floor || itm.floor || this.game.cnv.height;
 				p.color = params.color || itm.color || "white";
 				p.sprites = params.sprites || itm.sprites || [];
+				p.pos = params.pos || itm.pos || [0,0];
 				p.backgrounds = params.backgrounds || itm.backgrounds || [];
+				p.walls = params.walls || itm.walls || [];
 				return new fzn.Level(this.game,p);
+			break;
+			case "wall":
+				p.negative = (typeof params.negative != "undefined") ? params.negative : (typeof itm.negative != "undefined") ?  itm.negative : false;
+				return new fzn.Wall(this.game,p);
 			break;
 			default:
 				for(def in itm){
