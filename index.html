@@ -7,6 +7,7 @@
 		<script type="text/javascript" src="js/fznSprites.js"></script>
 		<script type="text/javascript" src="js/fznBackgrounds.js"></script>
 		<script type="text/javascript" src="js/fznWalls.js"></script>
+		<script type="text/javascript" src="js/fznNPC.js"></script>
 		<script>
 			var game,luigi;
 			function loadGame(){
@@ -14,10 +15,6 @@
 				game.define("wall",[
 					{
 						name:"wall"
-					},
-					{
-						name:"hole",
-						negative:true
 					}]
 				)
 				game.define("background",[
@@ -54,15 +51,13 @@
 						source: "img/luigi-sprites.png",
 						type: "user",
 						gravity: 0.8,
-						collide: {
-							block: function(self,pos,item,collision){
-								//self = the sprite
-								//item = the sprite object that collided
-								//collision = a report of collisions
-								//pos = array with position where collided
-							},
-							deadly: function(self){
-								self.please("die");
+						collide: ["block","deadly"],
+						onCollide: function(self,pos,col){
+							var item;
+							for(item in col.all){
+								if(col.all[item].type == "deadly"){
+									self.please("die")
+								}
 							}
 						},
 						size:[16,22],
@@ -115,13 +110,16 @@
 						name: "spike",
 						source: "img/enemies.png",
 						type: "deadly",
-						collide: {
-						//	block:true
-						},
+						collide: ["block","deadly"],
 						gravity: 0.6,
 						size:[18,18],
 						sprite: {
-							stand:{ delay:5, steps:[[0,77],[19,77]]}
+							L:{
+								stand:{ delay:5, steps:[[0,77],[19,77]]}
+							},
+							R:{
+								stand:{ delay:5, steps:[[440,320],[459,320]]}
+							}
 						}
 					}
 				]);
@@ -132,7 +130,8 @@
 					size: [600,300],
 					sprites:[
 						{copyOf: "luigi",  id: "luigi"},
-						{copyOf: "spike",  params: {pos:[100,200]}},
+						{copyOf: "spike",  params: {pos:[100,150],NPC:"run"}},
+						{copyOf: "spike",  params: {pos:[100,100],NPC:"walk"}},
 						/*
 						{copyOf: "spike",  params: {pos:[120,200]}},
 						{copyOf: "spike",  params: {pos:[140,200]}},
@@ -175,7 +174,8 @@
 						{copyOf: "ground", id: "mainGround", params: {pos:[0,284]}}
 					],
 					walls:[
-						{copyOf: "wall", params: {pos:[116,100],size:[10,100]}}
+						{copyOf: "wall", params: {pos:[150,150],size:[20,50],color:"white"}},
+						{copyOf: "wall", params: {pos:[50,250],size:[20,50],color:"white"}}
 					]
 				});
 				game.loadLevel("level01");
