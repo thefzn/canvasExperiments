@@ -112,7 +112,9 @@ fzn.Catalog.prototype = {
 				p.gravity = params.gravity || itm.gravity || 0;
 				p.sprite = params.sprite || itm.sprite || {};
 				p.collide = params.collide || itm.collide || [];
+				p.onCollide = params.onCollide || itm.onCollide || false;
 				p.action = params.action || itm.action || "stand";
+				p.NPC = params.NPC || itm.NPC || false;
 				return new fzn.Sprite(this.game,p);
 			break;
 			case "background":
@@ -131,7 +133,8 @@ fzn.Catalog.prototype = {
 				return new fzn.Level(this.game,p);
 			break;
 			case "wall":
-				p.negative = (typeof params.negative != "undefined") ? params.negative : (typeof itm.negative != "undefined") ?  itm.negative : false;
+				p.color = params.color || itm.color || false;
+				p.fixed = params.fixed || itm.fixed || false;
 				return new fzn.Wall(this.game,p);
 			break;
 			default:
