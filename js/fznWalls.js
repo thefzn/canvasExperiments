@@ -5,7 +5,10 @@ fzn.Wall = function (game,params){
 		this.game = game;
 		this.data = params.data;
 		this.size = params.size;
+		this.type = "wall";
 		this.source = params.source;
+		this.color = params.color;
+		this.fixed = params.fixed;
 		this.pos = params.pos;
 		this.id = params.id;
 		this.init();
@@ -21,18 +24,7 @@ fzn.Wall.prototype = {
 	},
 	redraw: function(){
 		var x,y,sX,sY;
-		this.game.canvas.save();
-			x = this.pos[0];
-			y = this.pos[1];
-		this.game.canvas.fillStyle = "black";
-		this.game.canvas.fillRect(
-			x,
-			y,
-			this.size[0],
-			this.size[1]
-		);
-		this.game.canvas.restore();
-		if(!this.source){
+		if(!this.source && !this.color){
 			return false;
 		}
 		this.game.canvas.save();
@@ -65,9 +57,17 @@ fzn.Wall.prototype = {
 				this.game.cnv.width,
 				this.game.cnv.height
 			);
-		}else{
+		}else if(this.source){
 			this.game.canvas.drawImage(
 				this.image,
+				x,
+				y,
+				this.size[0],
+				this.size[1]
+			);
+		}else if(this.color){
+			this.game.canvas.fillStyle = this.color;
+			this.game.canvas.fillRect(
 				x,
 				y,
 				this.size[0],
