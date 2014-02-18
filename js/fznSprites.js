@@ -25,7 +25,10 @@ fzn.Sprite = function (game,params){
 		this.jumpForce = 10;
 		this.floor = this.level.floor;
 		this.collide = params.collide;
+		this.cOnCollide = params.onCollide;
 		this.collideItems = [];
+		this.activateNPC = params.NPC;
+		this.NPC = null;
 		
 		// Animation Vars
 		this.action = params.action;
@@ -42,6 +45,9 @@ fzn.Sprite = function (game,params){
 fzn.Sprite.prototype = {
 	init: function(){
 		this.mapAbilities();
+		if(this.type != "user" && this.activateNPC){
+			this.NPC = new fzn.NPC(this);
+		}
 		// Generate a canvas for Sprite
 		this.loadSheet(this.source);
 	},
@@ -50,6 +56,10 @@ fzn.Sprite.prototype = {
 			newposx = this.pos[0],
 			newposy = this.pos[1],
 			dir,skills;
+		if(this.activateNPC){
+			this.NPC.move();
+		}
+		
 		if(this.gravity != 0){
 			this.velDown = this.velDown + this.gravity;
 			this.velDown = (this.velDown > this.maxVelDown) ? this.maxVelDown : this.velDown;
@@ -129,7 +139,9 @@ fzn.Sprite.prototype = {
 			return false;
 		}
 		var d = dir || false;
-		if(d == "L" || d =="R"){
+		if(!d){
+			this.dir = (this.dir == "L") ? "R" : "L";
+		}else if(d == "L" || d =="R"){
 			this.dir = d;
 		}
 	},
@@ -138,7 +150,9 @@ fzn.Sprite.prototype = {
 			this.game.canvas.save();
 			this.game.canvas.globalAlpha = this.opacity;
 		}
-		this.pos[0] = (!this.level.size[0]) ? this.pos[0] : (this.pos[0] < 0) ? 0 : (this.pos[0] > (this.level.size[0]-this.size[0])) ? this.level.size[0]-this.size[0] : this.pos[0];
+		if(this.type == "user"){
+			this.pos[0] = (!this.level.size[0]) ? this.pos[0] : (this.pos[0] < 0) ? 0 : (this.pos[0] > (this.level.size[0]-this.size[0])) ? this.level.size[0]-this.size[0] : this.pos[0];
+		}
 		this.game.canvas.drawImage(
 			this.sheet,
 			this.active.steps[this.frame][0],
@@ -158,11 +172,13 @@ fzn.Sprite.prototype = {
 		var i,len,itm,
 			tolx = 5,
 			toly = 10,
+			all = {},
 			coll = {
-				T:[],
-				B:[],
-				L:[],
-				R:[]
+				T:{},
+				B:{},
+				L:{},
+				R:{},
+				detected:false
 			},
 			itmsOnDir = [],
 			newpos = [Math.round(posx),Math.round(posy)];
@@ -172,27 +188,60 @@ fzn.Sprite.prototype = {
 				if(itm){
 					if((posx+this.size[0]-tolx) > itm.pos[0] && (posx + tolx)  < (itm.pos[0]+itm.size[0])){
 						if((posy+this.size[1]) > itm.pos[1] && (posy+this.size[1]) < (itm.pos[1]+itm.size[1] )){
-							coll.B.push(itm);
+							coll.B.collision = true;
+							coll.B.items = coll.B.items || [];
+							coll.B.types = coll.B.types || {};
+							coll.B.items.push(itm);
+							coll.B.types[itm.type] = true;
+							all[itm.id]=itm;
+							coll.detected = true;
 						}
 						if(posy  < (itm.pos[1]+itm.size[1]) && posy  > itm.pos[1]){
-							coll.T.push(itm);
+							coll.T.collision = true;
+							coll.T.items = coll.T.items || [];
+							coll.T.types = coll.T.types || {};
+							coll.T.items.push(itm);
+							coll.T.types[itm.type] = true;
+							all[itm.id]=itm;
+							coll.detected = true;
 						}
 					}
 					if((posy+this.size[1]-toly) > itm.pos[1] && (posy + toly)  < (itm.pos[1]+itm.size[1])){
 						if((posx+this.size[0]) > itm.pos[0] && (posx+this.size[0]) < (itm.pos[0]+itm.size[0] )){
-							coll.R.push(itm)
+							coll.R.collision = true;
+							coll.R.items = coll.R.items || [];
+							coll.R.types = coll.R.types || {};
+							coll.R.items.push(itm);
+							coll.R.types[itm.type] = true;
+							all[itm.id]=itm;
+							coll.detected = true;
 						}
 						if(posx  < (itm.pos[0]+itm.size[0]) && posx  > itm.pos[0]){
-							coll.L.push(itm)
+							coll.L.collision = true;
+							coll.L.items = coll.L.items || [];
+							coll.L.types = coll.L.types || {};
+							coll.L.items.push(itm);
+							coll.L.types[itm.type] = true;
+							all[itm.id]=itm;
+							coll.detected = true;
 						}
 					}
 				}
 			}
-			if(coll.B.length > 0 || coll.T.length > 0 || coll.R.length > 0 || coll.L.length > 0){
+			if(coll.detected){
 				newpos = this.onCollide(coll,posx,posy);
 				//Execute Custom Collide Function
-				if(typeof this.collide[itm.type] == "function"){
-					this.collide[itm.type](this,[posx,posy],coll);
+				if(typeof this.cOnCollide == "function"){
+					this.cOnCollide(this,[posx,posy],{
+						sides: coll,
+						all: all
+					});
+				}
+				if(this.activateNPC){
+					this.NPC.onCollide(this,[posx,posy],{
+						sides: coll,
+						all: all
+					});;
 				}
 			}
 		}
@@ -200,45 +249,48 @@ fzn.Sprite.prototype = {
 	},
 	onCollide: function(coll,posx,posy){
 		var itm;
-		if(coll.B.length > 0){
-			itm = coll.B[0];
+		if(coll.B.collision){
+			itm = coll.B.items[0];
 			posy = (posy < itm.pos[1]) ? itm.pos[1] - this.size[1] : itm.pos[1] + itm.size[1];
 			this.velDown = 0.01;
 			this.falling = false;
 			this.jumping = false;
 		}
-		if(coll.T.length > 0){
-			itm = coll.T[0];
+		if(coll.T.collision){
+			itm = coll.T.items[0];
 			posy = (posy < itm.pos[1]) ? itm.pos[1] - this.size[1] : itm.pos[1] + itm.size[1];
 			this.velDown = 0;
 			this.falling = false;
 			this.jumping = false;
 		}
-		if(coll.R.length > 0){
-			itm = coll.R[0];
+		if(coll.R.collision){
+			itm = coll.R.items[0];
 			posx = itm.pos[0] - this.size[0];
 			this.velHor == 0;
 		}
-		if(coll.L.length > 0){
-			itm = coll.L[0];
+		if(coll.L.collision){
+			itm = coll.L.items[0];
 			posx = itm.pos[0] + itm.size[0];
 			this.velHor == 0;
 		}
 		return [Math.round(posx),Math.round(posy)];
 	},
 	getCollideItems: function(){
-		var type, sps;
+		var i,len,j,len2,type, sps;
 		this.collideItems = [];
 		this.level = game.level;
-		for(type in this.collide){
-			for(sps in this.level.spriteTypes[type]){
-				this.collideItems.push(this.level.spriteTypes[type][sps])
+		for(i=0,len=this.collide.length;i<len;i++){
+			type = this.collide[i]
+			if(typeof this.level.spriteTypes[type] != "undefined"){
+				for(j=0,len2=this.level.spriteTypes[type].length;j<len2;j++){
+					if(this.level.spriteTypes[type][j] != this.id){
+						this.collideItems.push(this.level.spriteTypes[type][j]);
+					}
+				}
 			}
 		}
 		for(sps in this.level.walls){
-			if(!sps.negative){
-				this.collideItems.push(this.level.walls[sps].id)
-			}
+			this.collideItems.push(this.level.walls[sps].id)
 		}
 	},
 	mapAbilities: function(){
