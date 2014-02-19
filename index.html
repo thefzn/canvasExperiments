@@ -23,20 +23,17 @@
 						size: [16,16],
 						repeat: "repeat-x",
 						source:"img/ground.jpg"
-					},
-					{
+					},{
 						name:"hills",
 						size: [1887,201],
 						repeat: false,
 						source:"img/hills.png"
-					},
-					{
+					},{
 						name:"sky",
 						size: [2,223],
 						repeat: "repeat-x",
 						source:"img/sky.png"
-					},
-					{
+					},{
 						name:"clouds",
 						size: [267,113],
 						opacity:0.6,
@@ -50,13 +47,14 @@
 						name: "luigi",
 						source: "img/luigi-sprites.png",
 						type: "user",
+						shoot:"fireball",
 						gravity: 0.8,
 						collide: ["block","deadly"],
 						onCollide: function(self,pos,col){
 							var item;
 							for(item in col.all){
 								if(col.all[item].type == "deadly"){
-									self.please("die")
+									self.please("die");
 								}
 							}
 						},
@@ -67,19 +65,20 @@
 								walk:{  delay:5, steps:[[234,0],[263,0]]},
 								run:{   delay:3, steps:[[321,0],[348,0]]},
 								jump:{  delay:0, steps:[[294,30]]},
-								fall:{  delay:0, steps:[[264,30]]}
+								fall:{  delay:0, steps:[[264,30]]},
+								shoot:{ delay:0, steps:[[405,60]]}
 							},
 							L:{
 								stand:{ delay:0, steps:[[198,0]]},
 								walk:{  delay:5, steps:[[198,0],[169,0]]},
 								run:{   delay:3, steps:[[111,0],[84,0]]},
 								jump:{  delay:0, steps:[[139,30]]},
-								fall:{  delay:0, steps:[[168,30]]}
+								fall:{  delay:0, steps:[[168,30]]},
+								shoot:{ delay:0, steps:[[27,60]]}
 							},
 							dead:{  delay:3, steps:[[0,57],[432,57]]}
 						}
-					},
-					{
+					},{
 						name: "qBlock",
 						source: "img/blocks.png",
 						type: "block",
@@ -87,8 +86,7 @@
 						sprite: {
 							stand:{ delay:3, steps:[[0,0],[0,0],[0,0],[0,0],[0,0],[51,0],[34,0],[17,0]]}
 						}
-					},
-					{
+					},{
 						name: "eBlock",
 						source: "img/blocks.png",
 						type: "block",
@@ -96,8 +94,7 @@
 						sprite: {
 							stand:{ delay:0, steps:[[0,17]]}
 						}
-					},
-					{
+					},{
 						name: "block",
 						source: "img/blocks.png",
 						type: "block",
@@ -105,8 +102,7 @@
 						sprite: {
 							stand:{ delay:0, steps:[[17,17]]}
 						}
-					},
-					{
+					},{
 						name: "spike",
 						source: "img/enemies.png",
 						type: "deadly",
@@ -115,11 +111,24 @@
 						size:[18,18],
 						sprite: {
 							L:{
-								stand:{ delay:5, steps:[[0,77],[19,77]]}
+								walk:{ delay:5, steps:[[0,77],[19,77]]}
 							},
 							R:{
-								stand:{ delay:5, steps:[[440,320],[459,320]]}
-							}
+								walk:{ delay:5, steps:[[459,320],[478,320]]}
+							},
+							stand: { delay:0, steps:[[74,78]]}
+						}
+					},{
+						name: "fireball",
+						source: "img/enemies.png",
+						type: "userPower",
+						collide: ["block"],
+						gravity: 0.6,
+						size:[9,9],
+						NPC:"bounce",
+						jumpForce:5,
+						sprite: {
+							stand: { delay:3, steps:[[435,8],[445,7],[455,7],[465,7]]}
 						}
 					}
 				]);
@@ -127,36 +136,34 @@
 					name: "level01",
 					floor: 285,
 					color: "#5088A0",
-					size: [600,300],
+					size: [0,300],
 					sprites:[
 						{copyOf: "luigi",  id: "luigi"},
-						{copyOf: "spike",  params: {pos:[100,150],NPC:"run"}},
-						{copyOf: "spike",  params: {pos:[100,100],NPC:"walk"}},
-						/*
-						{copyOf: "spike",  params: {pos:[120,200]}},
-						{copyOf: "spike",  params: {pos:[140,200]}},
-						{copyOf: "spike",  params: {pos:[160,200]}},
-						{copyOf: "spike",  params: {pos:[180,200]}},
-						{copyOf: "spike",  params: {pos:[200,200]}},
-						{copyOf: "spike",  params: {pos:[220,200]}},
-						{copyOf: "spike",  params: {pos:[240,200]}},
-						{copyOf: "spike",  params: {pos:[260,200]}},
-						{copyOf: "spike",  params: {pos:[280,200]}},
-						{copyOf: "spike",  params: {pos:[300,200]}},
-						{copyOf: "spike",  params: {pos:[320,200]}},
-						{copyOf: "spike",  params: {pos:[340,200]}},
-						{copyOf: "spike",  params: {pos:[360,200]}},
-						{copyOf: "spike",  params: {pos:[380,200]}},
-						{copyOf: "spike",  params: {pos:[400,200]}},
-						{copyOf: "spike",  params: {pos:[420,200]}},
-						{copyOf: "spike",  params: {pos:[440,200]}},
-						{copyOf: "spike",  params: {pos:[460,200]}},
-						{copyOf: "spike",  params: {pos:[480,200]}},
-						{copyOf: "spike",  params: {pos:[500,200]}},
-						{copyOf: "spike",  params: {pos:[520,200]}},
-						{copyOf: "spike",  params: {pos:[540,200]}},
-						{copyOf: "spike",  params: {pos:[560,200]}},
-						*/
+						{copyOf: "spike",  params: {pos:[100,220],NPC:"jump",jumpForce:5}},
+						{copyOf: "spike",  params: {pos:[100,220],NPC:"walk"}},
+						{copyOf: "spike",  params: {pos:[120,220]}},
+						{copyOf: "spike",  params: {pos:[140,220]}},
+						{copyOf: "spike",  params: {pos:[160,220]}},
+						{copyOf: "spike",  params: {pos:[180,220]}},
+						{copyOf: "spike",  params: {pos:[200,220]}},
+						{copyOf: "spike",  params: {pos:[220,220]}},
+						{copyOf: "spike",  params: {pos:[240,220]}},
+						{copyOf: "spike",  params: {pos:[260,220]}},
+						{copyOf: "spike",  params: {pos:[280,220]}},
+						{copyOf: "spike",  params: {pos:[300,220]}},
+						{copyOf: "spike",  params: {pos:[320,220]}},
+						{copyOf: "spike",  params: {pos:[340,220]}},
+						{copyOf: "spike",  params: {pos:[360,220]}},
+						{copyOf: "spike",  params: {pos:[380,220]}},
+						{copyOf: "spike",  params: {pos:[400,220]}},
+						{copyOf: "spike",  params: {pos:[420,220]}},
+						{copyOf: "spike",  params: {pos:[440,220]}},
+						{copyOf: "spike",  params: {pos:[460,220]}},
+						{copyOf: "spike",  params: {pos:[480,220]}},
+						{copyOf: "spike",  params: {pos:[500,220]}},
+						{copyOf: "spike",  params: {pos:[520,220]}},
+						{copyOf: "spike",  params: {pos:[540,220]}},
+						{copyOf: "spike",  params: {pos:[560,220]}},
 						{copyOf: "qBlock", params: {pos:[100,200]}},
 						{copyOf: "eBlock", params: {pos:[116,200]}},
 						{copyOf: "block",  params: {pos:[132,200]}},
@@ -174,7 +181,6 @@
 						{copyOf: "ground", id: "mainGround", params: {pos:[0,284]}}
 					],
 					walls:[
-						{copyOf: "wall", params: {pos:[150,150],size:[20,50],color:"white"}},
 						{copyOf: "wall", params: {pos:[50,250],size:[20,50],color:"white"}}
 					]
 				});
