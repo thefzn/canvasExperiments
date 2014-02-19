@@ -80,6 +80,7 @@ fzn.Game.prototype = {
 fzn.Catalog = function(game,type){
 	this.type = type || "generic";
 	this.items = {};
+	this.instances = 0;
 	this.game = game;
 }
 fzn.Catalog.prototype = {
@@ -98,53 +99,33 @@ fzn.Catalog.prototype = {
 		if(!n || typeof this.items[n] == "undefined"){
 			return false;
 		}
+		this.instances++;
 		params = params || {};
-		p.id = id || params.id || this.type+"_"+name+"_"+Math.round(Math.random()*10000);
-		p.source = params.source || itm.source || false;
-		p.pos = params.pos || itm.pos || [0,0];
-		p.opacity = (typeof params.opacity != "undefined") ? params.opacity : (typeof itm.opacity != "undefined") ?  itm.opacity : 1;
-		p.size = params.size || itm.size || [10,10];
-		p.data = params.data || itm.data || {};
-		
+		for(def in itm){
+			p[def] = itm[def];
+		}
+		for(def in params){
+			p[def] = params[def];
+		}
+		p.id = p.id || id || this.type+"_"+name+"_"+this.instances;
 		switch(this.type){
 			case "sprite":
-				p.type = params.type || itm.type || "generic";
-				p.gravity = params.gravity || itm.gravity || 0;
-				p.sprite = params.sprite || itm.sprite || {};
-				p.collide = params.collide || itm.collide || [];
-				p.onCollide = params.onCollide || itm.onCollide || false;
-				p.action = params.action || itm.action || "stand";
-				p.NPC = params.NPC || itm.NPC || false;
 				return new fzn.Sprite(this.game,p);
 			break;
 			case "background":
-				p.fixed = params.fixed || itm.fixed || false;
-				p.repeat = params.repeat || itm.repeat || false;
 				return new fzn.Background(this.game,p);
 			break;
 			case "level":
-				p.size = params.size || itm.size || [this.game.cnv.width,this.game.cnv.height];
-				p.floor = params.floor || itm.floor || this.game.cnv.height;
-				p.color = params.color || itm.color || "white";
-				p.sprites = params.sprites || itm.sprites || [];
-				p.pos = params.pos || itm.pos || [0,0];
-				p.backgrounds = params.backgrounds || itm.backgrounds || [];
-				p.walls = params.walls || itm.walls || [];
 				return new fzn.Level(this.game,p);
 			break;
 			case "wall":
-				p.color = params.color || itm.color || false;
-				p.fixed = params.fixed || itm.fixed || false;
 				return new fzn.Wall(this.game,p);
 			break;
 			default:
-				for(def in itm){
-					p[def] = itm[def];
-				}
-				for(def in params){
-					p[def] = params[def];
-				}
 				return p;
 		}
+	},
+	remove: function(){
+		
 	}
 }
