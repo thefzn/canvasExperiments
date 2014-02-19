@@ -4,35 +4,37 @@ fzn.Sprite = function (game,params){
 		// Data Vars
 		this.game = game;
 		this.level = game.level;
-		this.data = params.data;
-		this.size = params.size;
-		this.type = params.type;
-		this.pos = params.pos;
-		this.opacity = params.opacity;
+		this.data = params.data || {};
+		this.size = params.size || [10,10];
+		this.type = params.type || "generic";
+		this.pos = params.pos || [0,0];
+		this.shoot = params.shoot || false;
+		this.opacity = (typeof params.opacity != "undefined") ? params.opacity : 1;
 		this.id = params.id;
-		this.sprite = params.sprite;
-		this.source = params.source;
+		this.sprite = params.sprite || false;
+		this.source = params.source || false;;
 		this.alive = true;
 		
 		// Movement Vars
-		this.gravity = params.gravity;
-		this.velDown = 0;
-		this.maxVelDown = 8;
-		this.movement = 0.5,
-		this.velHor = 0;
-		this.maxVelHor = 5;
-		this.dir = "R";
-		this.jumpForce = 10;
-		this.floor = this.level.floor;
-		this.collide = params.collide;
-		this.cOnCollide = params.onCollide;
+		this.gravity = params.gravity || 0;
+		this.velDown = params.velDown || 0;
+		this.maxVelDown = params.maxVelDown || 8;
+		this.movement = params.movement || 0.5,
+		this.velHor = params.velHor || 0;
+		this.maxVelHor = params.maxVelHor || 5;
+		this.dir = params.dir || "R";
+		this.jumpForce = params.jumpForce || 10;
+		this.floor = params.floor || this.level.floor;
+		this.collide = params.collide || [];
+		this.cOnCollide = params.onCollide || false;
 		this.collideItems = [];
-		this.activateNPC = params.NPC;
-		this.NPC = null;
+		this.activateNPC = params.NPC || false;
+		this.NPC = false;
 		
 		// Animation Vars
-		this.action = params.action;
+		this.action = params.action || "stand";
 		this.frame = 0;
+		this.shooting = false;
 		this.jumping = false;
 		this.falling = false;
 		this.moving = false;
@@ -98,40 +100,60 @@ fzn.Sprite.prototype = {
 			this.pos = [newposx,newposy];
 		}
 		dir = this.sprite[this.dir];
-		this.active = (!this.alive) ? dir["dead"] || dir["stand"] : (this.jumping) ? dir["jump"] || dir["stand"] : (this.falling) ? dir["fall"] || dir["jump"] || dir["stand"] : dir[this.action] || dir["stand"];
+		this.active = 
+			(!this.alive) ?
+				dir["dead"] || dir["stand"] 
+			:
+				(this.shooting) ? 
+					dir["shoot"] || dir["jump"] || dir["walk"] || dir["stand"]
+				:
+					(this.jumping) ? 
+						dir["jump"] || dir["walk"] || dir["stand"]
+					:
+						(this.falling) ?
+							dir["fall"] || dir["jump"] || dir["walk"] || dir["stand"]
+						:
+							dir[this.action] || dir["stand"];
+		
 		if(this.active.delay != 0 && this.game.turn % this.active.delay == 0){
 			frame++;
 		}
 		this.frame = (frame >= this.active.steps.length) ? 0 : frame;
 		this.redraw();
+		this.shooting = false;
 	},
-	please: function(newState){
-		if(!this.game.start || !this.alive){
-			return false;
+	please:function(action){
+		var target = this.actions[action];
+		if(typeof target == "function"){
+			target.call(this);
 		}
-		switch(newState){
-			case "jump":
-				if(!this.jumping && !this.falling && this.velDown > 0){
-					this.frame = 0;
-					this.velDown = 0-this.jumpForce;
-				}
-				break
-			case "move":
-				this.moving = true;
-				this.velHor += this.movement;
-				this.velHor = (this.velHor > this.maxVelHor) ? this.maxVelHor : this.velHor;
-			break
-			case "die":
-				this.alive = false;
-				this.floor = this.level.size[1] + this.size[1] + 10;
+	},
+	actions:{
+		jump: function(){
+			if(!this.jumping && !this.falling && this.velDown > 0){
+				this.frame = 0;
 				this.velDown = 0-this.jumpForce;
-				this.action = "dead";
-			break
-			default:
-				if(typeof this.sprite[this.dir][newState] != "undefined"){
-					this.frame = 0;
-					this.action = newState;
-				}
+			}
+		},
+		move: function(){
+			this.moving = true;
+			this.velHor += this.movement;
+			this.velHor = (this.velHor > this.maxVelHor) ? this.maxVelHor : this.velHor;
+		},
+		die: function(){
+			this.alive = false;
+			this.floor = this.level.size[1] + this.size[1] + 10;
+			this.velDown = 0-this.jumpForce;
+			this.action = "dead";
+		},
+		shoot: function(){
+			var pos = [];
+			pos[0] = (this.dir == "R") ? this.pos[0] + this.size[0] - 2 : this.pos[0] - 5;
+			pos[1] = this.pos[1] + (this.size[1] / 2) - 5;
+			if(this.shoot){
+				this.shooting = true;
+				this.level.add("sprite",this.shoot,false,{pos:pos,dir:this.dir})
+			}
 		}
 	},
 	turn: function(dir){
