@@ -10,10 +10,18 @@ fzn.NPC = function (item){
 		this.configs = {
 			walk: {
 				speed:1
-			},
+			},	
 			run: {
 				speed:3
 			},
+			jump: {
+				speed:1,
+				jumpDelay:30
+			},
+			bounce: {
+				speed:2,
+				jumpDelay:1
+			}
 		}
 		this.init();
 	}else{
@@ -28,6 +36,11 @@ fzn.NPC.prototype = {
 	},
 	move: function(){
 		this.item.please("move");
+		if(this.type == "jump" || this.type == "bounce"){
+			if(!this.item.jumping  && !this.item.falling && this.game.turn % this.active.jumpDelay == 0){
+				this.item.please("jump");
+			}
+		}
 	},
 	onCollide: function(self,pos,col){
 		if(col.sides.L.collision || col.sides.R.collision){
