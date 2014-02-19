@@ -4,13 +4,13 @@ fzn.Background = function (game,params){
 		// Data Vars
 		this.game = game;
 		this.image = null;
-		this.data = params.data;
-		this.size = params.size;
-		this.pos = params.pos;
-		this.opacity = params.opacity;
-		this.source = params.source;
-		this.repeat = params.repeat;
-		this.fixed = params.fixed;
+		this.data = params.data || {};
+		this.size = params.size || [10,10];;
+		this.pos = params.pos || [0,0];;
+		this.opacity = (typeof params.opacity != "undefined") ? params.opacity : 1;
+		this.source = params.source || false;
+		this.repeat = params.repeat || false;
+		this.fixed = params.fixed || false;
 		this.id = params.id;
 		this.init();
 	}else{
