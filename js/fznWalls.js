@@ -3,13 +3,14 @@ fzn.Wall = function (game,params){
 	if(game instanceof fzn.Game){
 		// Data Vars
 		this.game = game;
-		this.data = params.data;
-		this.size = params.size;
+		this.data = params.data || {};
+		this.size = params.size || [10,10];
 		this.type = "wall";
-		this.source = params.source;
-		this.color = params.color;
-		this.fixed = params.fixed;
-		this.pos = params.pos;
+		this.source = params.source || false;
+		this.color = params.color || false;
+		this.opacity = (typeof params.opacity != "undefined") ? params.opacity : 1;
+		this.fixed = params.fixed || false;
+		this.pos = params.pos || [0,0];
 		this.id = params.id;
 		this.init();
 	}else{
