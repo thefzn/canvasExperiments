@@ -4,19 +4,19 @@ fzn.Level = function (game,params){
 		// Data Vars
 		this.game = game;
 		this.id = params.id;
-		this.data = params.data;
-		this.size = params.size;
-		this.pos = params.pos;
-		this.color = params.color;
+		this.data = params.data || {};
+		this.size = params.size || [this.game.cnv.width,this.game.cnv.height];
+		this.pos = params.pos || [0,0];
+		this.color = params.color || "white";
 		this.items = {
-			sprites: params.sprites,
-			backgrounds: params.backgrounds,
-			walls: params.walls
+			sprites: params.sprites || [],
+			backgrounds: params.backgrounds || [],
+			walls: params.walls || []
 		}
 		this.user = false;
 		this.keys = [];
 		this.spriteTypes = {};
-		this.floor =  params.floor || this.cnv.height;
+		this.floor =  params.floor || this.game.cnv.height;
 		this.init();
 	}else{
 		return false;
@@ -69,22 +69,34 @@ fzn.Level.prototype = {
 		}
 	},
 	add: function(type,name,id,params){
-		var catalog,item,target;
+		var catalog,item,target,lib;
 		target = type.toLowerCase();
-		item = this.game.libs[target].generate(name,id,params);
-		if(item){
-			target = type.toLowerCase()+"s";
-			this[target] = this[target] || {};
-			this[target][item.id] = item;
-			if(type.toLowerCase() == "sprite"){
-				item.floor = this.floor;
-				this.spriteTypes[item.type] = this.spriteTypes[item.type] || [];
-				this.spriteTypes[item.type].push(item.id);
-				if(item.type == "user"){
-					this.user = item;
-					this.attachEvents();
+		lib = this.game.libs[target] || false;
+		if(lib){
+			item = lib.generate(name,id,params);
+			if(item){
+				target = type.toLowerCase()+"s";
+				this[target] = this[target] || {};
+				this[target][item.id] = item;
+				if(type.toLowerCase() == "sprite"){
+					item.floor = this.floor;
+					this.spriteTypes[item.type] = this.spriteTypes[item.type] || [];
+					this.spriteTypes[item.type].push(item.id);
+					if(item.type == "user"){
+						this.user = item;
+						this.attachEvents();
+					}
+					this.updateCollitions();
 				}
-				this.updateCollitions();
+			}
+		}
+	},
+	remove: function(type,id){
+		var item,
+			target = this[type.toLowerCase()+"s"] || false;
+		if(target){
+			if(typeof target[id] != "undefined"){
+				delete target[id];
 			}
 		}
 	},
@@ -95,7 +107,7 @@ fzn.Level.prototype = {
 		}
 	},
 	userInput: function(){
-		if(this.user){
+		if(this.game.start && this.user && this.user.alive){
 			if(typeof this.keys[32] != "undefined" && this.keys[32]){
 				this.user.please("jump");
 			}
@@ -106,6 +118,9 @@ fzn.Level.prototype = {
 			if(typeof this.keys[39] != "undefined" && this.keys[39]){
 				this.user.turn("R");
 				this.user.please("move");
+			}
+			if(typeof this.keys[17] != "undefined" && this.keys[17]){
+				this.user.please("shoot");
 			}
 		}
 	},
