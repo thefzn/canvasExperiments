@@ -12,7 +12,9 @@ fzn.Sprite = function (game,params){
 		this.opacity = (typeof params.opacity != "undefined") ? params.opacity : 1;
 		this.id = params.id;
 		this.sprite = params.sprite || false;
-		this.source = params.source || false;;
+		this.source = params.source || false;
+		this.life = params.life || 1;
+		this.lifetime = params.lifetime || false;
 		this.alive = true;
 		
 		// Movement Vars
@@ -35,6 +37,7 @@ fzn.Sprite = function (game,params){
 		this.action = params.action || "stand";
 		this.frame = 0;
 		this.shooting = false;
+		this.shootLag = false;
 		this.jumping = false;
 		this.falling = false;
 		this.moving = false;
@@ -77,7 +80,7 @@ fzn.Sprite.prototype = {
 				}
 			}
 		}
-		if(this.alive){
+		if(!this.dying){
 			if(this.moving){
 				if(this.velHor <= 0){
 					this.velHor = 0;
@@ -101,7 +104,7 @@ fzn.Sprite.prototype = {
 		}
 		dir = this.sprite[this.dir];
 		this.active = 
-			(!this.alive) ?
+			(this.dying) ?
 				dir["dead"] || dir["stand"] 
 			:
 				(this.shooting) ? 
@@ -119,12 +122,22 @@ fzn.Sprite.prototype = {
 			frame++;
 		}
 		this.frame = (frame >= this.active.steps.length) ? 0 : frame;
-		this.redraw();
 		this.shooting = false;
+		
+		if(this.dying && this.pos[1] > this.level.size[1]){
+			this.alive = false;
+		}
+		if(this.lifetime !== false){
+			this.lifetime--;
+			if(this.lifetime<0){
+				this.alive=false;
+			}
+		}
+		this.redraw();
 	},
 	please:function(action){
 		var target = this.actions[action];
-		if(typeof target == "function"){
+		if(typeof target == "function" && !this.dying && this.alive){
 			target.call(this);
 		}
 	},
@@ -141,18 +154,19 @@ fzn.Sprite.prototype = {
 			this.velHor = (this.velHor > this.maxVelHor) ? this.maxVelHor : this.velHor;
 		},
 		die: function(){
-			this.alive = false;
+			this.dying = true;
 			this.floor = this.level.size[1] + this.size[1] + 10;
 			this.velDown = 0-this.jumpForce;
 			this.action = "dead";
 		},
 		shoot: function(){
 			var pos = [];
-			pos[0] = (this.dir == "R") ? this.pos[0] + this.size[0] - 2 : this.pos[0] - 5;
-			pos[1] = this.pos[1] + (this.size[1] / 2) - 5;
-			if(this.shoot){
+			if(this.shoot && !this.shootLag){
+				pos[0] = (this.dir == "R") ? this.pos[0] + this.size[0] - 2 : this.pos[0] - 5;
+				pos[1] = this.pos[1] + (this.size[1] / 2) - 5;
 				this.shooting = true;
-				this.level.add("sprite",this.shoot,false,{pos:pos,dir:this.dir})
+				this.shootLag = true;
+				this.level.add("sprite",this.shoot,false,{pos:pos,dir:this.dir});
 			}
 		}
 	},
@@ -168,15 +182,22 @@ fzn.Sprite.prototype = {
 		}
 	},
 	redraw: function(){
-		if(this.opacity != 1){
+		var opacity;
+		if(this.opacity != 1 || this.lifetime !== false){
+			if(this.lifetime !== false && this.lifetime < 5){
+				opacity = this.opacity * (this.lifetime/5);
+				opacity = (opacity >= 0) ? opacity : 0;
+			}else{
+				opacity = this.opacity;
+			}
 			this.game.canvas.save();
-			this.game.canvas.globalAlpha = this.opacity;
+			this.game.canvas.globalAlpha = opacity;
 		}
 		if(this.type == "user"){
 			this.pos[0] = (!this.level.size[0]) ? this.pos[0] : (this.pos[0] < 0) ? 0 : (this.pos[0] > (this.level.size[0]-this.size[0])) ? this.level.size[0]-this.size[0] : this.pos[0];
 		}
 		this.game.canvas.drawImage(
-			this.sheet,
+			this.game.sheets[this.source],
 			this.active.steps[this.frame][0],
 			this.active.steps[this.frame][1],
 			this.size[0],
@@ -186,7 +207,7 @@ fzn.Sprite.prototype = {
 			this.size[0],
 			this.size[1]
 		);
-		if(this.opacity != 1){
+		if(this.opacity != 1 || this.lifetime !== false){
 			this.game.canvas.restore();
 		}
 	},
@@ -207,9 +228,9 @@ fzn.Sprite.prototype = {
 		if(this.collideItems.length>0){
 			for(i=0,len=this.collideItems.length;i<len;i++){
 				itm = this.level.sprites[this.collideItems[i]] || this.level.walls[this.collideItems[i]] || false;
-				if(itm){
+				if(itm && !itm.dying){
 					if((posx+this.size[0]-tolx) > itm.pos[0] && (posx + tolx)  < (itm.pos[0]+itm.size[0])){
-						if((posy+this.size[1]) > itm.pos[1] && (posy+this.size[1]) < (itm.pos[1]+itm.size[1] )){
+						if((posy+this.size[1]) > itm.pos[1] && (posy+this.size[1]) < (itm.pos[1]+itm.size[1])){
 							coll.B.collision = true;
 							coll.B.items = coll.B.items || [];
 							coll.B.types = coll.B.types || {};
@@ -298,21 +319,22 @@ fzn.Sprite.prototype = {
 		return [Math.round(posx),Math.round(posy)];
 	},
 	getCollideItems: function(){
-		var i,len,j,len2,type, sps;
+		var i,len,item,target,type;
 		this.collideItems = [];
 		this.level = game.level;
 		for(i=0,len=this.collide.length;i<len;i++){
-			type = this.collide[i]
-			if(typeof this.level.spriteTypes[type] != "undefined"){
-				for(j=0,len2=this.level.spriteTypes[type].length;j<len2;j++){
-					if(this.level.spriteTypes[type][j] != this.id){
-						this.collideItems.push(this.level.spriteTypes[type][j]);
+			type = this.collide[i];
+			target = this.level.spriteTypes[type];
+			if(typeof target != "undefined"){
+				for(item in target){
+					if(item != this.id){
+						this.collideItems.push(item);
 					}
 				}
 			}
 		}
-		for(sps in this.level.walls){
-			this.collideItems.push(this.level.walls[sps].id)
+		for(item in this.level.walls){
+			this.collideItems.push(this.level.walls[item].id)
 		}
 	},
 	mapAbilities: function(){
@@ -340,14 +362,15 @@ fzn.Sprite.prototype = {
 	},
 	loadSheet: function(source){
 		var src = source || false,
-			self = this;
-		self.sheet = new Image()
-		self.sheet.addEventListener("load", function() {
-			self.game.loadQueue--;
-		}, false);
-		self.game.loadQueue++;
-		if(src){
-			self.sheet.src = src;
+			self = this,
+			sheet = self.game.sheets[src];
+		if(src && typeof sheet == "undefined"){
+			self.game.sheets[src] = new Image()
+			self.game.sheets[src].addEventListener("load", function() {
+				self.game.loadQueue--;
+			}, false);
+			self.game.loadQueue++;
+			self.game.sheets[src].src = src;
 		}
 	}
 }
