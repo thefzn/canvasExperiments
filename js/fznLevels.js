@@ -47,13 +47,22 @@ fzn.Level.prototype = {
 		this.userInput();
 		this.draw("Sprite");
 		this.draw("Wall");
+		this.draw("Overlay");
 	},
 	draw: function(type){
 		var item,
 			target = this[type.toLowerCase()+"s"] || false;
 		if(target){
 			for(item in target){
-				target[item].go();
+				if(type.toLowerCase() == "sprite"){
+					if(target[item].alive){
+						target[item].go();
+					}else{
+						this.remove(type,target[item].id,target[item].type);
+					}
+				}else{
+					target[item].go();
+				}
 			}
 		}
 	},
@@ -80,8 +89,8 @@ fzn.Level.prototype = {
 				this[target][item.id] = item;
 				if(type.toLowerCase() == "sprite"){
 					item.floor = this.floor;
-					this.spriteTypes[item.type] = this.spriteTypes[item.type] || [];
-					this.spriteTypes[item.type].push(item.id);
+					this.spriteTypes[item.type] = this.spriteTypes[item.type] || {};
+					this.spriteTypes[item.type][item.id] = true;
 					if(item.type == "user"){
 						this.user = item;
 						this.attachEvents();
@@ -91,14 +100,23 @@ fzn.Level.prototype = {
 			}
 		}
 	},
-	remove: function(type,id){
-		var item,
-			target = this[type.toLowerCase()+"s"] || false;
+	remove: function(type,id,spriteType){
+		var item,i,len,
+			spriteType = spriteType || false,
+			type = type.toLowerCase(),
+			target = this[type+"s"] || false;
 		if(target){
 			if(typeof target[id] != "undefined"){
 				delete target[id];
 			}
 		}
+		if(type == "sprite" && spriteType){
+			target = this.spriteTypes[spriteType] || false;
+			if(target && target[id]){
+				delete target[id];
+			}
+		}
+		this.updateCollitions();
 	},
 	updateCollitions: function(){
 		var s;
@@ -121,6 +139,8 @@ fzn.Level.prototype = {
 			}
 			if(typeof this.keys[17] != "undefined" && this.keys[17]){
 				this.user.please("shoot");
+			}else{
+				this.user.shootLag=false;
 			}
 		}
 	},
