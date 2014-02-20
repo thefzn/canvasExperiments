@@ -17,6 +17,15 @@
 						name:"wall"
 					}]
 				)
+				game.define("overlay",[
+					{
+						name:"gameOver",
+						animation:"bounce",
+						fixed:true,
+						size: [76,16],
+						source:"img/gameover.png"
+					}
+				]);
 				game.define("background",[
 					{
 						name:"ground",
@@ -53,7 +62,8 @@
 						onCollide: function(self,pos,col){
 							var item;
 							for(item in col.all){
-								if(col.all[item].type == "deadly"){
+								if(col.all[item].type == "deadly" && !col.all[item].dying){
+									self.level.add("overlay","gameOver","gameOver",{pos:"center"});
 									self.please("die");
 								}
 							}
@@ -108,21 +118,33 @@
 						type: "deadly",
 						collide: ["block","deadly"],
 						gravity: 0.6,
+						jumpForce:5,
 						size:[18,18],
 						sprite: {
 							L:{
-								walk:{ delay:5, steps:[[0,77],[19,77]]}
+								stand:{ delay:5, steps:[[0,77],[19,77]]},
+								dead: { delay:0, steps:[[94,77]]}
 							},
 							R:{
-								walk:{ delay:5, steps:[[459,320],[478,320]]}
-							},
-							stand: { delay:0, steps:[[74,78]]}
+								stand:{ delay:5, steps:[[459,320],[478,320]]},
+								dead: { delay:0, steps:[[365,320]]}
+							}
 						}
 					},{
 						name: "fireball",
 						source: "img/enemies.png",
 						type: "userPower",
-						collide: ["block"],
+						collide: ["block","deadly"],
+						onCollide: function(self,pos,col){
+							var item;
+							for(item in col.all){
+								if(col.all[item].type == "deadly" && !col.all[item].dying){
+									col.all[item].please("die");
+									self.alive=false;
+								}
+							}
+						},
+						lifetime:30,
 						gravity: 0.6,
 						size:[9,9],
 						NPC:"bounce",
@@ -136,10 +158,10 @@
 					name: "level01",
 					floor: 285,
 					color: "#5088A0",
-					size: [0,300],
+					size: [600,300],
 					sprites:[
 						{copyOf: "luigi",  id: "luigi"},
-						{copyOf: "spike",  params: {pos:[100,220],NPC:"jump",jumpForce:5}},
+						{copyOf: "spike",  params: {pos:[100,220],NPC:"jump"}},
 						{copyOf: "spike",  params: {pos:[100,220],NPC:"walk"}},
 						{copyOf: "spike",  params: {pos:[120,220]}},
 						{copyOf: "spike",  params: {pos:[140,220]}},
