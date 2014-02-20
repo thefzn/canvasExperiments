@@ -19,7 +19,7 @@ fzn.NPC = function (item){
 				jumpDelay:30
 			},
 			bounce: {
-				speed:2,
+				speed:3,
 				jumpDelay:1
 			}
 		}
@@ -43,8 +43,11 @@ fzn.NPC.prototype = {
 		}
 	},
 	onCollide: function(self,pos,col){
-		if(col.sides.L.collision || col.sides.R.collision){
-			this.item.turn();
+		if(col.sides.L.collision){
+			this.item.turn("R");
+		}else if(col.sides.R.collision){
+			this.item.turn("L");
 		}
+		
 	}
 }
