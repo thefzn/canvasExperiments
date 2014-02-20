@@ -12,9 +12,10 @@ fzn.Game = function(canvasID){
 	this.loadQueue = 0;
 	this.start = true;
 	this.level = false;
+	this.sheets = {};
 	this.turn = 0;
 	this.init();
-}
+};
 fzn.Game.prototype = {
 	init: function(){
 		if(!this.canvas){
@@ -30,7 +31,7 @@ fzn.Game.prototype = {
 		}
 		if(this.loadQueue == 0 && typeof this.level == "object" && this.level){
 			this.clear();
-			this.turn = (this.turn < 100) ? this.turn + 1 : 0;
+			this.turn = (this.turn < 2520) ? this.turn + 1 : 0;
 			this.level.go();
 		}
 		window.requestAnimFrame(function() {
@@ -113,6 +114,9 @@ fzn.Catalog.prototype = {
 				return new fzn.Sprite(this.game,p);
 			break;
 			case "background":
+				return new fzn.Background(this.game,p);
+			break;
+			case "overlay":
 				return new fzn.Background(this.game,p);
 			break;
 			case "level":
