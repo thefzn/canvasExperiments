@@ -28,7 +28,6 @@ fzn.Sprite = function (game,params){
 		this.jumpForce = params.jumpForce || 10;
 		this.floor = params.floor || this.level.floor;
 		this.collide = params.collide || [];
-		this.cOnCollide = params.onCollide || false;
 		this.collideItems = [];
 		this.activateNPC = params.NPC || false;
 		this.NPC = false;
@@ -160,13 +159,24 @@ fzn.Sprite.prototype = {
 			this.action = "dead";
 		},
 		shoot: function(){
-			var pos = [];
+			var bName,
+				pos = [],
+				params = {};
 			if(this.shoot && !this.shootLag){
-				pos[0] = (this.dir == "R") ? this.pos[0] + this.size[0] - 2 : this.pos[0] - 5;
+				pos[0] = (this.dir == "R") ? this.pos[0] + this.size[0] - 5 : this.pos[0] + 5;
 				pos[1] = this.pos[1] + (this.size[1] / 2) - 5;
+				
+				if(typeof this.shoot == "object"){
+					bName = this.shoot.name || false;
+					params = this.shoot.params;
+				}else{
+					bName = this.shoot
+				}
+				params.pos = pos;
+				params.dir = this.dir;
 				this.shooting = true;
 				this.shootLag = true;
-				this.level.add("sprite",this.shoot,false,{pos:pos,dir:this.dir});
+				this.level.add("sprite",bName,false,params,false);
 			}
 		}
 	},
@@ -216,114 +226,84 @@ fzn.Sprite.prototype = {
 			tolx = 5,
 			toly = 10,
 			all = {},
-			coll = {
-				T:{},
-				B:{},
-				L:{},
-				R:{},
-				detected:false
-			},
+			coll = {},
 			itmsOnDir = [],
 			newpos = [Math.round(posx),Math.round(posy)];
 		if(this.collideItems.length>0){
 			for(i=0,len=this.collideItems.length;i<len;i++){
+				coll = {
+					B:false,
+					T:false,
+					L:false,
+					R:false,
+					Any:false
+				}
 				itm = this.level.sprites[this.collideItems[i]] || this.level.walls[this.collideItems[i]] || false;
-				if(itm && !itm.dying){
-					if((posx+this.size[0]-tolx) > itm.pos[0] && (posx + tolx)  < (itm.pos[0]+itm.size[0])){
-						if((posy+this.size[1]) > itm.pos[1] && (posy+this.size[1]) < (itm.pos[1]+itm.size[1])){
-							coll.B.collision = true;
-							coll.B.items = coll.B.items || [];
-							coll.B.types = coll.B.types || {};
-							coll.B.items.push(itm);
-							coll.B.types[itm.type] = true;
-							all[itm.id]=itm;
-							coll.detected = true;
+				if(itm && !itm.dying && itm.alive){
+					if((newpos[0]+this.size[0]-tolx) > itm.pos[0] && (newpos[0] + tolx)  < (itm.pos[0]+itm.size[0])){
+						if((newpos[1]+this.size[1]) > itm.pos[1] && (newpos[1]+this.size[1]) < (itm.pos[1]+itm.size[1])){
+							coll.B = true;
+							coll.Any = true;
 						}
-						if(posy  < (itm.pos[1]+itm.size[1]) && posy  > itm.pos[1]){
-							coll.T.collision = true;
-							coll.T.items = coll.T.items || [];
-							coll.T.types = coll.T.types || {};
-							coll.T.items.push(itm);
-							coll.T.types[itm.type] = true;
-							all[itm.id]=itm;
-							coll.detected = true;
+						if(newpos[1]  < (itm.pos[1]+itm.size[1]) && newpos[1]  > itm.pos[1]){
+							coll.T = true;
+							coll.Any = true;
 						}
 					}
-					if((posy+this.size[1]-toly) > itm.pos[1] && (posy + toly)  < (itm.pos[1]+itm.size[1])){
-						if((posx+this.size[0]) > itm.pos[0] && (posx+this.size[0]) < (itm.pos[0]+itm.size[0] )){
-							coll.R.collision = true;
-							coll.R.items = coll.R.items || [];
-							coll.R.types = coll.R.types || {};
-							coll.R.items.push(itm);
-							coll.R.types[itm.type] = true;
-							all[itm.id]=itm;
-							coll.detected = true;
+					if((newpos[1]+this.size[1]-toly) > itm.pos[1] && (newpos[1] + toly)  < (itm.pos[1]+itm.size[1])){
+						if((newpos[0]+this.size[0]) > itm.pos[0] && (newpos[0]+this.size[0]) < (itm.pos[0]+itm.size[0] )){
+							coll.R = true;
+							coll.Any = true;
 						}
-						if(posx  < (itm.pos[0]+itm.size[0]) && posx  > itm.pos[0]){
-							coll.L.collision = true;
-							coll.L.items = coll.L.items || [];
-							coll.L.types = coll.L.types || {};
-							coll.L.items.push(itm);
-							coll.L.types[itm.type] = true;
-							all[itm.id]=itm;
-							coll.detected = true;
+						if(newpos[0]  < (itm.pos[0]+itm.size[0]) && newpos[0]  > itm.pos[0]){
+							coll.L = true;
+							coll.Any = true;
 						}
 					}
-				}
-			}
-			if(coll.detected){
-				newpos = this.onCollide(coll,posx,posy);
-				//Execute Custom Collide Function
-				if(typeof this.cOnCollide == "function"){
-					this.cOnCollide(this,[posx,posy],{
-						sides: coll,
-						all: all
-					});
-				}
-				if(this.activateNPC){
-					this.NPC.onCollide(this,[posx,posy],{
-						sides: coll,
-						all: all
-					});;
+					if(coll.Any){
+						newpos = this.onCollide(coll,itm,newpos[0],newpos[1]);
+						//Execute Custom Collide Function
+						if(typeof this.collide[itm.type] == "function"){
+							this.collide[itm.type](this,itm,coll)
+						}
+						if(this.activateNPC){
+							this.NPC.onCollide(this,newpos,coll);
+						}
+					}
 				}
 			}
 		}
 		return newpos;
 	},
-	onCollide: function(coll,posx,posy){
+	onCollide: function(coll,itm,posx,posy){
 		var itm;
-		if(coll.B.collision){
-			itm = coll.B.items[0];
-			posy = (posy < itm.pos[1]) ? itm.pos[1] - this.size[1] : itm.pos[1] + itm.size[1];
+		if(coll.B){
+			posy = itm.pos[1] - this.size[1];
 			this.velDown = 0.01;
 			this.falling = false;
 			this.jumping = false;
 		}
-		if(coll.T.collision){
-			itm = coll.T.items[0];
-			posy = (posy < itm.pos[1]) ? itm.pos[1] - this.size[1] : itm.pos[1] + itm.size[1];
+		if(coll.T){
+			posy = itm.pos[1] + itm.size[1];
 			this.velDown = 0;
 			this.falling = false;
 			this.jumping = false;
 		}
-		if(coll.R.collision){
-			itm = coll.R.items[0];
+		if(coll.R){
 			posx = itm.pos[0] - this.size[0];
 			this.velHor == 0;
 		}
-		if(coll.L.collision){
-			itm = coll.L.items[0];
+		if(coll.L){
 			posx = itm.pos[0] + itm.size[0];
 			this.velHor == 0;
 		}
 		return [Math.round(posx),Math.round(posy)];
 	},
 	getCollideItems: function(){
-		var i,len,item,target,type;
+		var item,target,type;
 		this.collideItems = [];
-		this.level = game.level;
-		for(i=0,len=this.collide.length;i<len;i++){
-			type = this.collide[i];
+		this.level = this.game.level;
+		for(type in this.collide){
 			target = this.level.spriteTypes[type];
 			if(typeof target != "undefined"){
 				for(item in target){
@@ -331,10 +311,13 @@ fzn.Sprite.prototype = {
 						this.collideItems.push(item);
 					}
 				}
+			}else{
+				for(item in this.level.walls){
+					if(this.level.walls[item].type == type){
+						this.collideItems.push(this.level.walls[item].id)
+					}
+				}
 			}
-		}
-		for(item in this.level.walls){
-			this.collideItems.push(this.level.walls[item].id)
 		}
 	},
 	mapAbilities: function(){
