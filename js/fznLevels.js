@@ -32,10 +32,11 @@ fzn.Level.prototype = {
 			if(theLib){
 				for(i=0,len=theLib.length;i<len;i++){
 					item = theLib[i];
-					this.add(lib,item.copyOf,item.id,item.params);
+					this.add(lib,item.copyOf,item.id,item.params,false);
 				}
 			}
 		}
+		this.updateCollitions();
 		this.onLoad();
 	},
 	onLoad: function(){
@@ -77,8 +78,9 @@ fzn.Level.prototype = {
 			this.pos[1] = (!this.size[1]) ? movedY : (movedY > (this.size[1]-this.game.cnv.height)) ? this.size[1]-this.game.cnv.height : (movedY >= 0) ? movedY : 0 ;
 		}
 	},
-	add: function(type,name,id,params){
-		var catalog,item,target,lib;
+	add: function(type,name,id,params,update){
+		var catalog,item,target,lib,
+			update = (typeof update == "undefined") ? true : update;
 		target = type.toLowerCase();
 		lib = this.game.libs[target] || false;
 		if(lib){
@@ -95,7 +97,11 @@ fzn.Level.prototype = {
 						this.user = item;
 						this.attachEvents();
 					}
-					this.updateCollitions();
+					if(update){
+						this.updateCollitions();
+					}else{
+						item.getCollideItems();
+					}
 				}
 			}
 		}
@@ -116,7 +122,7 @@ fzn.Level.prototype = {
 				delete target[id];
 			}
 		}
-		this.updateCollitions();
+		//this.updateCollitions();
 	},
 	updateCollitions: function(){
 		var s;
