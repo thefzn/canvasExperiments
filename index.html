@@ -14,7 +14,8 @@
 				game = new fzn.Game("board");
 				game.define("wall",[
 					{
-						name:"wall"
+						name:"wall",
+						type:"tube"
 					}]
 				)
 				game.define("overlay",[
@@ -58,11 +59,11 @@
 						type: "user",
 						shoot:"fireball",
 						gravity: 0.8,
-						collide: ["block","deadly"],
-						onCollide: function(self,pos,col){
-							var item;
-							for(item in col.all){
-								if(col.all[item].type == "deadly" && !col.all[item].dying){
+						collide: {
+							block: true,
+							tube: true,
+							deadly: function(self,item,col){
+								if(!item.dying){
 									self.level.add("overlay","gameOver","gameOver",{pos:"center"});
 									self.please("die");
 								}
@@ -116,7 +117,11 @@
 						name: "spike",
 						source: "img/enemies.png",
 						type: "deadly",
-						collide: ["block","deadly"],
+						collide: {
+							block:true,
+							tube: true,
+							deadly:true
+						},
 						gravity: 0.6,
 						jumpForce:5,
 						size:[18,18],
@@ -134,20 +139,17 @@
 						name: "fireball",
 						source: "img/enemies.png",
 						type: "userPower",
-						collide: ["block","deadly"],
-						onCollide: function(self,pos,col){
-							var item;
-							for(item in col.all){
-								if(col.all[item].type == "deadly" && !col.all[item].dying){
-									col.all[item].please("die");
-									self.alive=false;
-								}
+						collide: {
+							block: true,
+							deadly: function(self,item,col){
+								item.please("die");
+								self.alive=false;
 							}
 						},
 						lifetime:30,
 						gravity: 0.6,
 						size:[9,9],
-						NPC:"bounce",
+						NPC:{walk:{speed:3},jump:{jumpDelay:1}},
 						jumpForce:5,
 						sprite: {
 							stand: { delay:3, steps:[[435,8],[445,7],[455,7],[465,7]]}
@@ -161,12 +163,26 @@
 					size: [600,300],
 					sprites:[
 						{copyOf: "luigi",  id: "luigi"},
-						{copyOf: "spike",  params: {pos:[100,220],NPC:"jump"}},
-						{copyOf: "spike",  params: {pos:[100,220],NPC:"walk"}},
-						{copyOf: "spike",  params: {pos:[120,220]}},
-						{copyOf: "spike",  params: {pos:[140,220]}},
-						{copyOf: "spike",  params: {pos:[160,220]}},
-						{copyOf: "spike",  params: {pos:[180,220]}},
+						{copyOf: "spike",  params: {pos:[80,220],NPC:"walk"}},
+						{copyOf: "spike",  params: {pos:[100,220],NPC:["jump"]}},
+						{copyOf: "spike",  params: {pos:[120,220],NPC:{walk:{speed:2},jump:true}}},
+						{copyOf: "spike",  params: {pos:[140,220],NPC:{
+								walk:true,
+								jump:true,
+								shoot:{
+									name:"fireball",
+									params:{
+										collide:{
+											user:function(self,item,col){
+												item.please("die");
+												self.alive=false;
+											}
+										}
+									}
+								}
+						}}},
+						{copyOf: "spike",  params: {pos:[160,220],NPC:{follow:"luigi"}}},
+						{copyOf: "spike",  params: {pos:[180,220],NPC:{follow:"luigi",walk:true}}},
 						{copyOf: "spike",  params: {pos:[200,220]}},
 						{copyOf: "spike",  params: {pos:[220,220]}},
 						{copyOf: "spike",  params: {pos:[240,220]}},
