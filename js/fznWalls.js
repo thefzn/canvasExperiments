@@ -5,7 +5,8 @@ fzn.Wall = function (game,params){
 		this.game = game;
 		this.data = params.data || {};
 		this.size = params.size || [10,10];
-		this.type = "wall";
+		this.type = params.type || "wall";
+		this.alive = true;
 		this.source = params.source || false;
 		this.color = params.color || false;
 		this.opacity = (typeof params.opacity != "undefined") ? params.opacity : 1;
