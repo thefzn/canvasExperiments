@@ -2,19 +2,50 @@
 <html>
 	<head>
 		<title>Canvas Sprite Tests</title>
+		<style>
+			@font-face {
+				font-family: "8BitWonder";
+				src: url("fonts/8BitWonder.eot");
+				src: local("?"),
+				url("fonts/8BitWonder.woff") format("woff"),
+				url("fonts/8BitWonder.ttf") format("truetype"),
+				url("fonts/8BitWonder.svg#webfontkGgbkDbi") format("svg");
+			}
+			@font-face {
+				font-family: "Gamegirl";
+				src: url("fonts/Gamegirl.eot");
+				src: local("?"),
+				url("fonts/Gamegirl.woff") format("woff"),
+				url("fonts/Gamegirl.ttf") format("truetype"),
+				url("fonts/Gamegirl.svg#webfontkGgbkDbi") format("svg");
+			}
+			@font-face {
+				font-family: "PressStart";
+				src: url("fonts/PressStart2P.eot");
+				src: local("?"),
+				url("fonts/PressStart2P.woff") format("woff"),
+				url("fonts/PressStart2P.ttf") format("truetype"),
+				url("fonts/PressStart2P.svg#webfontkGgbkDbi") format("svg");
+			}
+		</style>
 		<script type="text/javascript" src="js/fznPlatform.js"></script>
+		<script type="text/javascript" src="js/fznMenus.js"></script>
 		<script type="text/javascript" src="js/fznLevels.js"></script>
 		<script type="text/javascript" src="js/fznSprites.js"></script>
 		<script type="text/javascript" src="js/fznBackgrounds.js"></script>
 		<script type="text/javascript" src="js/fznWalls.js"></script>
 		<script type="text/javascript" src="js/fznNPC.js"></script>
+		<script type="text/javascript" src="js/fznAnimations.js"></script>
 		<script>
 			var game,luigi;
 			function loadGame(){
 				game = new fzn.Game("board");
+				game.fonts = ["8BitWonder","Gamegirl","PressStart"];
 				game.define("wall",[
 					{
-						name:"wall",
+						name:"greenTube",
+						size: [32,48],
+						source:"img/tube.png",
 						type:"tube"
 					}]
 				)
@@ -59,12 +90,14 @@
 						type: "user",
 						shoot:"fireball",
 						gravity: 0.8,
+						maxVelHor:5,
+						maxVelDown:8,
 						collide: {
 							block: true,
 							tube: true,
 							deadly: function(self,item,col){
 								if(!item.dying){
-									self.level.add("overlay","gameOver","gameOver",{pos:"center"});
+									self.level.add("overlay","gameOver","gameOver",{pos:["center","center"]});
 									self.please("die");
 								}
 							}
@@ -141,6 +174,7 @@
 						type: "userPower",
 						collide: {
 							block: true,
+							tube: true,
 							deadly: function(self,item,col){
 								item.please("die");
 								self.alive=false;
@@ -206,7 +240,6 @@
 						{copyOf: "eBlock", params: {pos:[116,200]}},
 						{copyOf: "block",  params: {pos:[132,200]}},
 						{copyOf: "block",  params: {pos:[148,200]}},
-						{copyOf: "block",  params: {pos:[68,232]}},
 						{copyOf: "block",  params: {pos:[200,200]}},
 						{copyOf: "block",  params: {pos:[300,200]}},
 						{copyOf: "block",  params: {pos:[400,200]}},
@@ -219,10 +252,49 @@
 						{copyOf: "ground", id: "mainGround", params: {pos:[0,284]}}
 					],
 					walls:[
-						{copyOf: "wall", params: {pos:[50,250],size:[20,50],color:"white"}}
+						{copyOf: "greenTube", params: {pos:[50,236]}}
 					]
 				});
-				game.loadLevel("level01");
+				game.define("button",{
+					name: "mainMenuBtn",
+					source:"img/button.png",
+					sprite:{
+						stand:[0,0],
+						press:[0,33]
+					},
+					font: {
+						family: "Gamegirl",
+						color: "#991324",
+						align: "center",
+						size: "10px"
+					},
+					color: "black",
+					size: [100,32]
+				});
+				game.define("menu",{
+					name: "StartMenu",
+					opacity: 0,
+					buttons: [
+						{
+							name: "mainMenuBtn",
+							text: "Reset",
+							pos: ["center", 10],
+							action: function(game,menu){
+								game.loadLevel("level01");
+							}
+						},
+						{
+							name: "mainMenuBtn",
+							text: "Pause",
+							pos: ["center", 60],
+							action: function(game,menu){
+								game.pause();
+							}
+						}
+					]
+				});
+				game.loadMenu("StartMenu");
+				
 			}
 		</script>
 	</head>
