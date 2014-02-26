@@ -12,7 +12,9 @@ fzn.Game = function(canvasID){
 	this.loadQueue = 0;
 	this.start = true;
 	this.level = false;
-	this.sheets = {};
+	this.images = {};
+	this.fonts = [];
+	this.menus = [];
 	this.turn = 0;
 	this.init();
 };
@@ -22,17 +24,25 @@ fzn.Game.prototype = {
 			console.log("Canvas not supported or error loading")
 			return false;
 		}
+		this.catchClick();
 		this.go();
 	},
 	go: function(){
-		var self = this;
+		var self = this,
+			key,len, menu;
 		if(!this.start){
 			return false;
 		}
-		if(this.loadQueue == 0 && typeof this.level == "object" && this.level){
+		if(this.loadQueue == 0){
 			this.clear();
-			this.turn = (this.turn < 2520) ? this.turn + 1 : 0;
-			this.level.go();
+			if(typeof this.level == "object" && this.level){
+				this.turn = (this.turn < 2520) ? this.turn + 1 : 0;
+				this.level.go();
+			}
+			for(key = 0,len = this.menus.length; key < len; key++){
+				menu = this.menus[key];
+				menu.go();
+			}
 		}
 		window.requestAnimFrame(function() {
           self.go();
@@ -68,14 +78,67 @@ fzn.Game.prototype = {
 		if(params instanceof Array){
 			for(i=0,len=params.length;i<len;i++){
 				this.libs[target].store(params[i]);
+				if(typeof params[i].source === "string"){
+					this.loadImage(params[i].source);
+				}
 			}
 		}else{
 			this.libs[target].store(params);
+			if(typeof params.source === "string"){
+				this.loadImage(params.source);
+			}
 		}
 	},
 	loadLevel: function(lvl,params){
 		this.level = this.libs.level.generate(lvl,false,params);
 		this.level.reset();
+	},
+	loadMenu: function(menu,params){
+		var params = params || {},
+			menu = this.libs.menu.generate(menu,false,params);
+		this.menus.push(menu);
+	},
+	loadImage: function(source){
+		var src = source || false,
+			self = this,
+			image = this.images[src];
+		if(src && typeof image == "undefined"){
+			this.images[src] = new Image()
+			this.images[src].addEventListener("load", function() {
+				self.loadQueue--;
+			}, false);
+			this.loadQueue++;
+			this.images[src].src = src;
+		}
+	},
+	catchClick: function(){
+		var self = this;
+		this.cnv.addEventListener("mousedown", function(event){
+			var pos = [event.offsetX,event.offsetY];
+			self.onClick(pos); 
+		}, false);
+	},
+	onClick: function(pos){
+		var catched = false,
+			key,len,menu;
+		for(len = this.menus.length; len > 0; len--){
+			menu = this.menus[len-1];
+			if(menu.click){
+				catched = menu.checkClicked(pos);
+			}
+			if(catched){
+				break;
+			}
+		}
+	},
+	checkFont: function(font){
+		var i, len, choosen = "Arial";
+		for(i = 0, len = this.fonts.length; i < len; i++){
+			if(font == this.fonts[i]){
+				choosen = font;
+			}
+		}
+		return choosen;
 	}
 }
 fzn.Catalog = function(game,type){
@@ -124,6 +187,13 @@ fzn.Catalog.prototype = {
 			break;
 			case "wall":
 				return new fzn.Wall(this.game,p);
+			break;
+			case "button":
+				var parent = p.menu || this.game.level || this.game;
+				return new fzn.Button(parent,p);
+			break;
+			case "menu":
+				return new fzn.Menu(this.game,p);
 			break;
 			default:
 				return p;
