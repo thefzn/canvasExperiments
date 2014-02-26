@@ -3,15 +3,11 @@ fzn.Background = function (game,params){
 	if(game instanceof fzn.Game){
 		// Data Vars
 		this.game = game;
-		this.image = null;
 		this.data = params.data || {};
 		this.size = params.size || [10,10];
 		this.pos = params.pos || [0,0];
-		this.velDown = 0;
-		this.gravity = 1;
-		this.maxVel = 11;
-		this.apos = [0,0];
 		this.animation = params.animation || false;
+		this.anim = null;
 		this.animationEnd = false;
 		this.opacity = (typeof params.opacity != "undefined") ? params.opacity : 1;
 		this.source = params.source || false;
@@ -26,52 +22,22 @@ fzn.Background = function (game,params){
 fzn.Background.prototype = {
 	init: function(){
 		// Generate a canvas for BG
-		if(this.pos == "center"){
-			this.pos = []
-			this.pos[0] = (this.game.cnv.width / 2) - (this.size[0] / 2);
-			this.pos[1] = (this.game.cnv.height / 2) - (this.size[1] / 2);
-		}
+		this.pos[0] = (this.pos[0] == "center") ? (game.cnv.width / 2) - (this.size[0] / 2) : this.pos[0];
+		this.pos[1] = (this.pos[1] == "center") ? (game.cnv.height / 2) - (this.size[1] / 2) : this.pos[1];
 		if(this.animation){
-			switch(this.animation){
-				case "bounce":
-					this.apos = [this.pos[0],0-this.size[1]];
-				break;
-			}
+			this.anim = new fzn.Animation(this,this.animation);
 		}
-		this.loadImage(this.source);
+		this.game.loadImage(this.source);
 	},
 	go: function(){
-		if(this.animation && !this.animationEnd){
-			switch(this.animation){
-				case "fall":
-					if(this.apos[1] < this.pos[1]){
-						this.velDown += this.gravity;
-						this.velDown = (this.velDown > this.maxVel) ? this.maxVel : this.velDown;
-						this.apos[1] += this.velDown;
-					}else{
-						this.apos[1] == this.pos[1];
-						this.animationEnd = true
-					}
-				break;
-				case "bounce":
-					this.velDown += this.gravity;
-					this.apos[1] += this.velDown;
-					if(this.apos[1] > this.pos[1]){
-							this.apos[1] = this.pos[1]
-						if(this.velDown<0.5){
-							this.animationEnd = true
-						}else{
-							this.velDown = -(this.velDown/2);
-						}
-					}
-				break;
-			}
+		if(this.animation){
+			this.anim.go();
 		}
 		this.redraw();
 	},
 	redraw: function(){
 		var x,y,sX,sY,
-			pos=(this.animation && !this.animationEnd) ? this.apos : this.pos;
+			pos=this.pos;
 		this.game.canvas.save();
 		if(this.fixed === true){
 			x = pos[0];
@@ -94,7 +60,7 @@ fzn.Background.prototype = {
 		}
 		if(this.repeat == "repeat" || this.repeat == "repeat-x" || this.repeat == "repeat-y"){
 			this.game.canvas.translate(x,y);
-			var ptrn = this.game.canvas.createPattern(this.image,this.repeat);
+			var ptrn = this.game.canvas.createPattern(this.game.images[this.source],this.repeat);
 			this.game.canvas.fillStyle = ptrn;
 			this.game.canvas.fillRect(
 				sX,
@@ -104,7 +70,7 @@ fzn.Background.prototype = {
 			);
 		}else{
 			this.game.canvas.drawImage(
-				this.image,
+				this.game.images[this.source],
 				x,
 				y,
 				this.size[0],
@@ -112,17 +78,5 @@ fzn.Background.prototype = {
 			);
 		}
 		this.game.canvas.restore();
-	},
-	loadImage: function(source){
-		var src = source || false,
-			self = this;
-		self.image = new Image()
-		self.image.addEventListener("load", function() {
-			self.game.loadQueue--;
-		}, false);
-		self.game.loadQueue++;
-		if(src){
-			self.image.src = src;
-		}
 	}
 }
