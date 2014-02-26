@@ -20,10 +20,10 @@ fzn.Sprite = function (game,params){
 		// Movement Vars
 		this.gravity = params.gravity || 0;
 		this.velDown = params.velDown || 0;
-		this.maxVelDown = params.maxVelDown || 8;
+		this.maxVelDown = params.maxVelDown || 3;
 		this.movement = params.movement || 0.5,
 		this.velHor = params.velHor || 0;
-		this.maxVelHor = params.maxVelHor || 5;
+		this.maxVelHor = params.maxVelHor || 3;
 		this.dir = params.dir || "R";
 		this.jumpForce = params.jumpForce || 10;
 		this.floor = params.floor || this.level.floor;
@@ -53,7 +53,7 @@ fzn.Sprite.prototype = {
 			this.NPC = new fzn.NPC(this);
 		}
 		// Generate a canvas for Sprite
-		this.loadSheet(this.source);
+		this.game.loadImage(this.source);
 	},
 	go: function(){
 		var frame = this.frame,
@@ -207,7 +207,7 @@ fzn.Sprite.prototype = {
 			this.pos[0] = (!this.level.size[0]) ? this.pos[0] : (this.pos[0] < 0) ? 0 : (this.pos[0] > (this.level.size[0]-this.size[0])) ? this.level.size[0]-this.size[0] : this.pos[0];
 		}
 		this.game.canvas.drawImage(
-			this.game.sheets[this.source],
+			this.game.images[this.source],
 			this.active.steps[this.frame][0],
 			this.active.steps[this.frame][1],
 			this.size[0],
@@ -223,8 +223,8 @@ fzn.Sprite.prototype = {
 	},
 	checkCollide: function(posx,posy){
 		var i,len,itm,
-			tolx = 5,
-			toly = 10,
+			tolx = this.maxVelHor,
+			toly = this.maxVelDown,
 			all = {},
 			coll = {},
 			itmsOnDir = [],
@@ -279,7 +279,7 @@ fzn.Sprite.prototype = {
 		var itm;
 		if(coll.B){
 			posy = itm.pos[1] - this.size[1];
-			this.velDown = 0.01;
+			this.velDown = (this.velDown > 0 ) ? 0.01 : this.velDown;
 			this.falling = false;
 			this.jumping = false;
 		}
@@ -341,19 +341,6 @@ fzn.Sprite.prototype = {
 		}
 		for(item in this.sprite.R){
 			this.abilities["R"][item] = item;
-		}
-	},
-	loadSheet: function(source){
-		var src = source || false,
-			self = this,
-			sheet = self.game.sheets[src];
-		if(src && typeof sheet == "undefined"){
-			self.game.sheets[src] = new Image()
-			self.game.sheets[src].addEventListener("load", function() {
-				self.game.loadQueue--;
-			}, false);
-			self.game.loadQueue++;
-			self.game.sheets[src].src = src;
 		}
 	}
 }
