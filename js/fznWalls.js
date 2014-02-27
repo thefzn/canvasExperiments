@@ -20,6 +20,9 @@ fzn.Wall = function (game,params){
 }
 fzn.Wall.prototype = {
 	init: function(){
+		if(this.source){
+			this.game.loadImage(this.source);
+		}
 	},
 	go: function(){
 		this.redraw();
@@ -51,7 +54,7 @@ fzn.Wall.prototype = {
 		}
 		if(this.repeat == "repeat" || this.repeat == "repeat-x" || this.repeat == "repeat-y"){
 			this.game.canvas.translate(x,y);
-			var ptrn = this.game.canvas.createPattern(this.image,this.repeat);
+			var ptrn = this.game.canvas.createPattern(this.game.images[this.source],this.repeat);
 			this.game.canvas.fillStyle = ptrn;
 			this.game.canvas.fillRect(
 				sX,
@@ -61,7 +64,7 @@ fzn.Wall.prototype = {
 			);
 		}else if(this.source){
 			this.game.canvas.drawImage(
-				this.image,
+				this.game.images[this.source],
 				x,
 				y,
 				this.size[0],
@@ -77,20 +80,5 @@ fzn.Wall.prototype = {
 			);
 		}
 		this.game.canvas.restore();
-	},
-	loadImage: function(source){
-		var src = source || false,
-			self = this;
-		if(!this.source){
-			return false;
-		}
-		self.image = new Image()
-		self.image.addEventListener("load", function() {
-			self.game.loadQueue--;
-		}, false);
-		self.game.loadQueue++;
-		if(src){
-			self.image.src = src;
-		}
 	}
 }

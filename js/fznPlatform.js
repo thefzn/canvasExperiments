@@ -189,7 +189,7 @@ fzn.Catalog.prototype = {
 				return new fzn.Wall(this.game,p);
 			break;
 			case "button":
-				var parent = p.menu || this.game.level || this.game;
+				var parent = p.menu || this.game.level || false;
 				return new fzn.Button(parent,p);
 			break;
 			case "menu":
