@@ -54,6 +54,8 @@ fzn.Wall.prototype = {
 		}
 		if(this.repeat == "repeat" || this.repeat == "repeat-x" || this.repeat == "repeat-y"){
 			this.game.canvas.translate(x,y);
+			sY = (!this.fixed && (this.repeat == "repeat-x" || this.repeat == "repeat")) ? 0 : sY;
+			sX = (!this.fixed && (this.repeat == "repeat-y" || this.repeat == "repeat")) ? 0 : sX;
 			var ptrn = this.game.canvas.createPattern(this.game.images[this.source],this.repeat);
 			this.game.canvas.fillStyle = ptrn;
 			this.game.canvas.fillRect(
