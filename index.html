@@ -37,7 +37,7 @@
 		<script type="text/javascript" src="js/fznNPC.js"></script>
 		<script type="text/javascript" src="js/fznAnimations.js"></script>
 		<script>
-			var game,luigi;
+			var game,luigi,theMenu;
 			function loadGame(){
 				game = new fzn.Game("board");
 				game.define("wall",[
@@ -80,6 +80,9 @@
 						repeat: false,
 						fixed: 0.5,
 						source:"img/clouds.png"
+					},{
+						name:"empty",
+						fixed: false
 					}
 				]);
 				game.define("sprite",[
@@ -95,11 +98,30 @@
 							block: true,
 							tube: true,
 							deadly: function(self,item,col){
-								if(!item.dying){
-									self.level.add("overlay","gameOver","gameOver",{pos:["center","center"]});
+								if(self.inmune){
+									item.please("die");
+								}else if(!item.dying){
 									self.please("die");
 								}
 							}
+						},
+						onDie:function(self){
+							var menu,i,len;
+							for(i=0,len=self.game.menus.length;i<len;i++){
+								if(self.game.menus[i].id = "mainMenu"){
+									menu = self.game.menus[i];
+									break
+								}
+							}
+							self.level.add("overlay","gameOver","gameOver",{pos:"center"});
+							menu.buttons.btnPause.anim.start("move",["center",60],function(){
+								menu.add("button","mainMenuBtnStart","btnStart",{
+									pos:["center",10],
+									animation:"fadeIn",
+									text: "Try Again",
+									menu: menu
+								});
+							})
 						},
 						size:[16,22],
 						sprite: {
@@ -152,6 +174,7 @@
 						collide: {
 							block:true,
 							tube: true,
+							user: true,
 							deadly:true
 						},
 						gravity: 0.6,
@@ -217,7 +240,7 @@
 								}
 						}}},
 						{copyOf: "spike",  params: {pos:[160,220],NPC:{follow:"luigi"}}},
-						{copyOf: "spike",  params: {pos:[180,220],NPC:{follow:"luigi",walk:true}}},
+						{copyOf: "spike",  params: {pos:[180,220],NPC:{follow:"luigi",walk:true,jump:true}}},
 						{copyOf: "spike",  params: {pos:[200,220]}},
 						{copyOf: "spike",  params: {pos:[220,220]}},
 						{copyOf: "spike",  params: {pos:[240,220]}},
@@ -256,45 +279,81 @@
 						{copyOf: "greenTube", params: {pos:[50,236]}}
 					]
 				});
-				game.define("button",{
-					name: "mainMenuBtn",
-					source:"img/button.png",
-					sprite:{
-						stand:[0,0],
-						press:[0,33]
+				game.define("button",[
+					{
+						name: "mainMenuBtnPause",
+						source:"img/button.png",
+						sprite:{
+							stand:[0,0],
+							press:[0,33]
+						},
+						font: {
+							family: "Gamegirl",
+							color: "#991324",
+							align: "center",
+							size: "10px"
+						},
+						size: [100,32],
+						pos: ["center", 60],
+						action: function(game,menu){
+							game.pause();
+						}
 					},
-					font: {
-						family: "Gamegirl",
-						color: "#991324",
-						align: "center",
-						size: "10px"
-					},
-					color: "black",
-					size: [100,32]
-				});
+					{
+						name: "mainMenuBtnStart",
+						source:"img/button.png",
+						sprite:{
+							stand:[0,0],
+							press:[0,33]
+						},
+						font: {
+							family: "Gamegirl",
+							color: "#991324",
+							align: "center",
+							size: "10px"
+						},
+						size: [100,32],
+						pos: ["center", 10],
+						action: function(game,menu){
+							var self = this,
+								bg = menu.backgrounds.mainMenuOverlay,
+								btn = menu.buttons.btnPause;
+							self.anim.start("fadeOut",false,function(){
+								btn.anim.start("move",[100,10]);
+								menu.remove("button",self.id);
+							});
+							if(typeof bg != "undefined"){
+								bg.anim.start("fadeOut",false,function(){
+									menu.remove("background",bg.id);
+								});
+							}
+							game.loadLevel("level01");
+						}
+					}
+				]);
 				game.define("menu",{
 					name: "StartMenu",
-					opacity: 0,
 					buttons: [
 						{
-							name: "mainMenuBtn",
-							text: "Reset",
-							pos: ["center", 10],
-							action: function(game,menu){
-								game.loadLevel("level01");
+							copyOf: "mainMenuBtnStart",
+							id: "btnStart",
+							params:{
+								text: "Start"
 							}
 						},
 						{
-							name: "mainMenuBtn",
-							text: "Pause",
-							pos: ["center", 60],
-							action: function(game,menu){
-								game.pause();
+							copyOf: "mainMenuBtnPause",
+							id: "btnPause",
+							params:{
+								text: "Pause"
 							}
 						}
+					],
+					backgrounds: [
+						{copyOf:"empty",id:"mainMenuOverlay",params:{opacity: 0.5,color: "black"}}
 					]
 				});
-				game.loadMenu("StartMenu",{animation:"fall"});
+				theMenu = game.loadMenu("StartMenu",{id:"mainMenu",animation:"bounce"});
 				
 			}
 		</script>
