@@ -40,7 +40,10 @@ fzn.Sprite = function (game,params){
 		this.jumping = false;
 		this.falling = false;
 		this.moving = false;
+		this.inmune = false;
+		this.blinking = false;
 		this.abilities = {};
+		this.onDie = params.onDie || this.onDie;
 		this.init();
 	}else{
 		return false;
@@ -132,6 +135,11 @@ fzn.Sprite.prototype = {
 				this.alive=false;
 			}
 		}
+		if(this.inmune){
+			this.actions.blink.call(this);
+		}else{
+			this.blinking = false;
+		}
 		this.redraw();
 	},
 	please:function(action){
@@ -153,10 +161,13 @@ fzn.Sprite.prototype = {
 			this.velHor = (this.velHor > this.maxVelHor) ? this.maxVelHor : this.velHor;
 		},
 		die: function(){
-			this.dying = true;
-			this.floor = this.level.size[1] + this.size[1] + 10;
-			this.velDown = 0-this.jumpForce;
-			this.action = "dead";
+			if(!this.dying && !this.inmune){
+				this.dying = true;
+				this.floor = this.level.size[1] + this.size[1] + 10;
+				this.velDown = 0-this.jumpForce;
+				this.action = "dead";
+				this.onDie(this);
+			}
 		},
 		shoot: function(){
 			var bName,
@@ -178,6 +189,11 @@ fzn.Sprite.prototype = {
 				this.shootLag = true;
 				this.level.add("sprite",bName,false,params,false);
 			}
+		},
+		blink: function(){
+			if(this.game.turn % 2 == 0){
+				this.blinking = (this.blinking) ? false : true;
+			}
 		}
 	},
 	turn: function(dir){
@@ -193,6 +209,7 @@ fzn.Sprite.prototype = {
 	},
 	redraw: function(){
 		var opacity;
+		this.game.canvas.save();
 		if(this.opacity != 1 || this.lifetime !== false){
 			if(this.lifetime !== false && this.lifetime < 5){
 				opacity = this.opacity * (this.lifetime/5);
@@ -200,8 +217,10 @@ fzn.Sprite.prototype = {
 			}else{
 				opacity = this.opacity;
 			}
-			this.game.canvas.save();
 			this.game.canvas.globalAlpha = opacity;
+		}
+		if(this.blinking){
+			this.game.canvas.globalCompositeOperation = "lighter";
 		}
 		if(this.type == "user"){
 			this.pos[0] = (!this.level.size[0]) ? this.pos[0] : (this.pos[0] < 0) ? 0 : (this.pos[0] > (this.level.size[0]-this.size[0])) ? this.level.size[0]-this.size[0] : this.pos[0];
@@ -217,9 +236,7 @@ fzn.Sprite.prototype = {
 			this.size[0],
 			this.size[1]
 		);
-		if(this.opacity != 1 || this.lifetime !== false){
-			this.game.canvas.restore();
-		}
+		this.game.canvas.restore();
 	},
 	checkCollide: function(posx,posy){
 		var i,len,itm,
@@ -298,6 +315,9 @@ fzn.Sprite.prototype = {
 			this.velHor == 0;
 		}
 		return [Math.round(posx),Math.round(posy)];
+	},
+	onDie:function(){
+	
 	},
 	getCollideItems: function(){
 		var item,target,type;
