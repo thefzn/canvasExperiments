@@ -96,7 +96,15 @@ fzn.Game.prototype = {
 	loadMenu: function(menu,params){
 		var params = params || {},
 			menu = this.libs.menu.generate(menu,false,params);
+		menu.index = this.menus.length;
 		this.menus.push(menu);
+		return menu;
+	},
+	removeMenu: function(menu){
+		var index = menu.index;
+		this.menus[index] = null;
+		menu = null;
+		this.menus.splice(index,1);
 	},
 	loadImage: function(source){
 		var src = source || false,
