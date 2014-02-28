@@ -11,7 +11,8 @@ fzn.Level = function (game,params){
 		this.items = {
 			sprites: params.sprites || [],
 			backgrounds: params.backgrounds || [],
-			walls: params.walls || []
+			walls: params.walls || [],
+			overlays: params.overlays || []
 		}
 		this.user = false;
 		this.keys = [];
@@ -43,9 +44,10 @@ fzn.Level.prototype = {
 		// Custom code
 	},
 	go: function(){
+		var key, name;
 		this.checkPosition();
-		this.draw("Background");
 		this.userInput();
+		this.draw("Background");
 		this.draw("Sprite");
 		this.draw("Wall");
 		this.draw("Overlay");
@@ -122,7 +124,6 @@ fzn.Level.prototype = {
 				delete target[id];
 			}
 		}
-		//this.updateCollitions();
 	},
 	updateCollitions: function(){
 		var s;
