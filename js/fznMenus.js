@@ -6,21 +6,19 @@ fzn.Menu = function (game,params){
 		this.data = params.data || {};
 		this.size = params.size || [this.game.cnv.width,this.game.cnv.height];
 		this.pos = params.pos || [0,0];
-		this.anim = null;
-		this.animation = params.animation || false;
-		this.animationEnd = false;
 		this.opacity = (typeof params.opacity != "undefined") ? params.opacity : 1;
 		this.source = params.source || false;
-		this.color = params.color || "white";
+		this.color = params.color || "transparent";
 		this.items = {
 			backgrounds: params.backgrounds || [],
 			buttons: params.buttons || [],
-			walls: params.walls || []
+			ovelays: params.overlays || []
 		}
 		this.repeat = params.repeat || false;
 		this.id = params.id;
 		this.click = params.click || true;
 		this.keys = params.keys || true;
+		this.animation = params.animation || false;
 		this.init();
 	}else{
 		return false;
@@ -28,69 +26,38 @@ fzn.Menu = function (game,params){
 }
 fzn.Menu.prototype = {
 	init: function(){
-		// Generate a canvas for BG
-		this.pos[0] = (this.pos[0] == "center") ? (game.cnv.width / 2) - (this.size[0] / 2) : this.pos[0];
-		this.pos[1] = (this.pos[1] == "center") ? (game.cnv.height / 2) - (this.size[1] / 2) : this.pos[1];
-		if(this.animation){
-			this.anim = new fzn.Animation(this,this.animation);
+		if(this.pos == "center"){
+			this.pos = [];
+			this.pos[0] = (this.game.cnv.width / 2) - (this.size[0] / 2);
+			this.pos[1] = (this.game.cnv.height / 2) - (this.size[1] / 2);
+		}else{
+			this.pos[0] = (this.pos[0] == "center") ? (this.game.cnv.width / 2) - (this.size[0] / 2) : this.pos[0];
+			this.pos[1] = (this.pos[1] == "center") ? (this.game.cnv.height / 2) - (this.size[1] / 2) : this.pos[1];
 		}
+		this.anim = new fzn.Animation(this,this.animation);
+		// Generate a canvas for BG
 		this.game.loadImage(this.source);
-		this.loadButtons();
+		this.loadItems();
 	},
 	go: function(){
-		if(this.animation){
-			this.anim.go();
-		}
+		this.anim.go();
 		this.redraw();
-		for(item in this.buttons){
-			this.buttons[item].go();
-		}
+		this.draw("background");
+		this.draw("button");
+		this.draw("overlays");
 	},
-	redraw: function(){
-		var pos = this.pos,
-			x = pos[0],
-			y = pos[1];
-		this.game.canvas.save();
-		if(this.opacity != 1){
-			this.game.canvas.globalAlpha = this.opacity;
-		}
-		if(this.repeat == "repeat" || this.repeat == "repeat-x" || this.repeat == "repeat-y"){
-			this.game.canvas.translate(x,y);
-			var ptrn = this.game.canvas.createPattern(this.game.images[this.source],this.repeat);
-			this.game.canvas.fillStyle = ptrn;
-			this.game.canvas.fillRect(
-				x,
-				y,
-				this.game.cnv.width,
-				this.game.cnv.height
-			);
-		}else if(this.source){
-			this.game.canvas.drawImage(
-				this.game.images[this.source],
-				x,
-				y,
-				this.size[0],
-				this.size[1]
-			);
-		}else{
-			this.game.canvas.fillStyle = this.color;
-			this.game.canvas.fillRect(
-				x,
-				y,
-				this.size[0],
-				this.size[1]
-			);
-		}
-		this.game.canvas.restore();
-	},
-	loadButtons: function(){
-		var i,len,item,lib,name;
-		lib = this.game.libs.button;
-		for(i = 0, len = this.items.buttons.length; i < len; i++ ){
-			name = this.items.buttons[i].name;
-			id = this.items.buttons[i].id || false;
-			this.items.buttons[i].menu = this;
-			this.add("button",name,id,this.items.buttons[i]);
+	loadItems: function(){
+		var i,len,item,lib,theLib;
+		for(lib in this.game.libs){
+			theLib = this.items[lib+"s"] || false;
+			if(theLib){
+				for(i=0,len=theLib.length;i<len;i++){
+					item = theLib[i];
+					item.params = item.params || {};
+					item.params.menu = this;
+					this.add(lib,item.copyOf,item.id,item.params);
+				}
+			}
 		}
 	},
 	add: function(type,name,id,params){
@@ -115,6 +82,33 @@ fzn.Menu.prototype = {
 			}
 		}
 	},
+	remove: function(type,id){
+		var item,i,len,
+			type = type.toLowerCase(),
+			target = this[type+"s"] || false;
+		if(target){
+			if(typeof target[id] != "undefined"){
+				delete target[id];
+			}
+		}
+	},
+	draw: function(type){
+		var item,
+			target = this[type.toLowerCase()+"s"] || false;
+		if(target){
+			for(item in target){
+				if(type.toLowerCase() == "sprite"){
+					if(target[item].alive){
+						target[item].go();
+					}else{
+						this.remove(type,target[item].id,target[item].type);
+					}
+				}else{
+					target[item].go();
+				}
+			}
+		}
+	},
 	checkClicked: function(pos){
 		var insidePos = [], item;
 		if(pos[0] > this.pos[0] && pos[0] < this.pos[0]+this.size[0] && pos[1] > this.pos[1] && pos[1] < this.pos[1]+this.size[1]){
@@ -125,6 +119,45 @@ fzn.Menu.prototype = {
 			}
 			return true;
 		}
+	},
+	redraw: function(){
+		var pos = this.pos,
+			x = pos[0],
+			y = pos[1];
+		this.game.canvas.save();
+		if(this.opacity != 1){
+			this.game.canvas.globalAlpha = this.opacity;
+		}
+		if(this.repeat == "repeat" || this.repeat == "repeat-x" || this.repeat == "repeat-y"){
+			this.game.canvas.translate(x,y);
+			sY = (!this.fixed && (this.repeat == "repeat-x" || this.repeat == "repeat")) ? 0 : sY;
+			sX = (!this.fixed && (this.repeat == "repeat-y" || this.repeat == "repeat")) ? 0 : sX;
+			var ptrn = this.game.canvas.createPattern(this.game.images[this.source],this.repeat);
+			this.game.canvas.fillStyle = ptrn;
+			this.game.canvas.fillRect(
+				x,
+				y,
+				this.game.cnv.width,
+				this.game.cnv.height
+			);
+		}else if(this.source){
+			this.game.canvas.drawImage(
+				this.game.images[this.source],
+				x,
+				y,
+				this.size[0],
+				this.size[1]
+			);
+		}else if(this.color != "transparent"){
+			this.game.canvas.fillStyle = this.color;
+			this.game.canvas.fillRect(
+				x,
+				y,
+				this.size[0],
+				this.size[1]
+			);
+		}
+		this.game.canvas.restore();
 	}
 }
 fzn.Button = function (menu,params){
@@ -133,14 +166,12 @@ fzn.Button = function (menu,params){
 	this.game = menu.game;
 	this.data = params.data || {};
 	this.size = params.size || [50,20];
+	this.parent = params.menu || game.level || false;
 	this.pos = params.pos || [0,0];
 	this.action = params.action || function(){}; 
-	this.anim = null;
-	this.animation = params.animation || false;
-	this.animationEnd = false;
 	this.opacity = (typeof params.opacity != "undefined") ? params.opacity : 1;
 	this.source = params.source || false;
-	this.color = params.color || "white";
+	this.color = params.color || "transparent";
 	this.font = {family:"Arial",color:"black",size:"6px",align:"center"};
 	if(typeof params.font != "undefined"){
 		this.font.family = params.font.family || this.font.family;
@@ -153,23 +184,28 @@ fzn.Button = function (menu,params){
 	this.repeat = params.repeat || false;
 	this.text = params.text || false;
 	this.id = params.id;
-	this.states = params.states || {};
+	this.animation = params.animation || false;
 	this.init();
 }
 fzn.Button.prototype = {
 	init: function(){
-		// Generate a canvas for BG
-		this.pos[0] = (this.pos[0] == "center") ? (game.cnv.width / 2) - (this.size[0] / 2) : this.pos[0];
-		this.pos[1] = (this.pos[1] == "center") ? (game.cnv.height / 2) - (this.size[1] / 2) : this.pos[1];
-		if(this.animation){
-			this.anim = new fzn.Animation(this,this.animation);
+		var w,h;
+		if(this.pos == "center"){
+			this.pos = [];
+			this.pos[0] = (this.game.cnv.width / 2) - (this.size[0] / 2);
+			this.pos[1] = (this.game.cnv.height / 2) - (this.size[1] / 2);
+		}else{
+			w = this.parent.size[0] || this.game.cnv.width;
+			h = this.parent.size[1] || this.game.cnv.height;
+			this.pos[0] = (this.pos[0] == "center") ? (w / 2) - (this.size[0] / 2) : this.pos[0];
+			this.pos[1] = (this.pos[1] == "center") ? (h / 2) - (this.size[1] / 2) : this.pos[1];
 		}
+		this.anim = new fzn.Animation(this,this.animation);
+		// Generate a canvas for BG
 		this.game.loadImage(this.source);
 	},
 	go: function(){
-		if(this.animation){
-			this.anim.go();
-		}
+		this.anim.go();
 		this.redraw();
 		this.state = "stand";
 	},
@@ -179,32 +215,8 @@ fzn.Button.prototype = {
 			x = pos[0] + this.menu.pos[0],
 			y = pos[1] + this.menu.pos[1];
 		this.game.canvas.save();
-		if(this.opacity != 1){
-			this.game.canvas.globalAlpha = this.opacity;
-		}
-		if(this.repeat == "repeat" || this.repeat == "repeat-x" || this.repeat == "repeat-y"){
-			this.game.canvas.translate(x,y);
-			var ptrn = this.game.canvas.createPattern(this.game.images[this.source],this.repeat);
-			this.game.canvas.fillStyle = ptrn;
-			this.game.canvas.fillRect(
-				x,
-				y,
-				this.game.cnv.width,
-				this.game.cnv.height
-			);
-		}else if(this.source){
-			this.game.canvas.drawImage(
-				this.game.images[this.source],
-				state[0],
-				state[1],
-				this.size[0],
-				this.size[1],
-				x,
-				y,
-				this.size[0],
-				this.size[1]
-			);
-		}else{
+		this.game.canvas.globalAlpha = (this.menu) ?  this.menu.opacity * this.opacity : this.opacity;
+		if(this.color != "transparent"){
 			this.game.canvas.fillStyle = this.color;
 			this.game.canvas.fillRect(
 				x,
@@ -212,6 +224,33 @@ fzn.Button.prototype = {
 				this.size[0],
 				this.size[1]
 			);
+		}
+		if(this.source){
+			if(this.repeat == "repeat" || this.repeat == "repeat-x" || this.repeat == "repeat-y"){
+				this.game.canvas.translate(x,y);
+				sY = (!this.fixed && (this.repeat == "repeat-x" || this.repeat == "repeat")) ? 0 : sY;
+				sX = (!this.fixed && (this.repeat == "repeat-y" || this.repeat == "repeat")) ? 0 : sX;
+				var ptrn = this.game.canvas.createPattern(this.game.images[this.source],this.repeat);
+				this.game.canvas.fillStyle = ptrn;
+				this.game.canvas.fillRect(
+					x,
+					y,
+					this.game.cnv.width,
+					this.game.cnv.height
+				);
+			}else{
+				this.game.canvas.drawImage(
+					this.game.images[this.source],
+					state[0],
+					state[1],
+					this.size[0],
+					this.size[1],
+					x,
+					y,
+					this.size[0],
+					this.size[1]
+				);
+			}
 		}
 		if(this.text){
 			this.game.canvas.fillStyle = this.font.color;
