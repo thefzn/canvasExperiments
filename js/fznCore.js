@@ -3,50 +3,47 @@ var fzn = fzn || {};
 window.requestAnimFrame = (function(callback) {
 	//return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame ||
 	return function(callback) {
-	  window.setTimeout(callback, 1000/30);
+	  window.setTimeout(callback, 1000/12);
 	};
 })();
 fzn.Game = function(canvasID){
+	var canvasID = canvasID || false;
 	this.cnv = (typeof canvasID == "string") ? document.getElementById(canvasID) : canvasID;
+	if(!canvasID || !this.cnv)
+		return false;
+	
 	this.canvas = (typeof this.cnv.getContext != "undefined" ) ? this.cnv.getContext('2d'): false;
-	this.loadQueue = 0;
 	this.start = true;
-	this.level = false;
-	this.images = {};
-	this.fonts = [];
-	this.menus = [];
 	this.turn = 0;
+	this.stages = {
+		lenght:0
+	};
 	this.init();
 };
-fzn.Game.prototype = {
+fzn.Game.prototype = new fzn.Collection('game');
+fzn.Game.prototype.extend({
 	init: function(){
+		var self = this;
 		if(!this.canvas){
 			console.log("Canvas not supported or error loading")
 			return false;
 		}
-		this.catchClick();
-		this.go();
+		//this.catchClick();
+		//this.go();
 	},
 	go: function(){
 		var self = this,
-			key,len, menu;
-		if(!this.start){
+			key,len,menu;
+		if(!this.start || this.loadQueue == 0){
 			return false;
 		}
-		if(this.loadQueue == 0){
-			this.clear();
-			if(typeof this.level == "object" && this.level){
-				this.turn = (this.turn < 2520) ? this.turn + 1 : 0;
-				this.level.go();
-			}
-			for(key = 0,len = this.menus.length; key < len; key++){
-				menu = this.menus[key];
-				menu.go();
-			}
-		}
+		this.clear();
+		this.refresh(this.stages);
+		
 		window.requestAnimFrame(function() {
-          self.go();
+			self.go();
         });
+		this.turn++;
 	},
 	pause: function(){
 		if(this.start){
@@ -66,6 +63,45 @@ fzn.Game.prototype = {
 		}
 		
 	},
+	refresh: function(target){
+		var t = (typeof target == "object") ? target : {},
+			i,itm;
+		for(i in t){
+			itm = t[i];
+			if(itm instanceof fzn.Drawable){
+				itm.go();
+			}
+		}
+	},
+	loadStage: function(type,name,config){
+		var t = type || false,
+			n = name || false,
+			p = this.generate([t,n],config),
+			id = p.name || false;
+		console.log(p)
+		if(!p || id == "length")
+			return;
+		if(typeof this.stages[id] == "undefined"){
+			p.size = p.size || [this.cnv.width,this.cnv.height];
+			this.stages[id] = p;
+			this.stages.lenght++;
+		}
+		p.start();
+	},
+	newGame: function(config){
+		var conf = config || false,
+			self = this,
+			itm;
+		if(!conf)
+			return;
+		for(itm in config){
+			this.addItem(itm,config[itm]);
+		}
+	},
+	onLoad: function(){
+		console.log("Game loaded");
+	}
+	/*,
 	define: function(type,params){
 		var i,len,target,
 			type = type || false;
@@ -147,67 +183,5 @@ fzn.Game.prototype = {
 			}
 		}
 		return choosen;
-	}
-}
-fzn.Catalog = function(game,type){
-	this.type = type || "generic";
-	this.items = {};
-	this.instances = 0;
-	this.game = game;
-}
-fzn.Catalog.prototype = {
-	store: function(params){
-		var par = params || false;
-		
-		if(par && typeof par.name != "undefined"){
-			this.items[par.name] = par;
-		}
-	},
-	generate: function(name,id,params){
-		var n = name || false,
-			p = {},
-			itm = this.items[n],
-			def;
-		if(!n || typeof this.items[n] == "undefined"){
-			return false;
-		}
-		this.instances++;
-		params = params || {};
-		for(def in itm){
-			p[def] = itm[def];
-		}
-		for(def in params){
-			p[def] = params[def];
-		}
-		p.id = p.id || id || this.type+"_"+name+"_"+this.instances;
-		switch(this.type){
-			case "sprite":
-				return new fzn.Sprite(this.game,p);
-			break;
-			case "background":
-				return new fzn.Background(this.game,p);
-			break;
-			case "overlay":
-				return new fzn.Background(this.game,p);
-			break;
-			case "level":
-				return new fzn.Level(this.game,p);
-			break;
-			case "wall":
-				return new fzn.Wall(this.game,p);
-			break;
-			case "button":
-				var parent = p.menu || this.game.level || false;
-				return new fzn.Button(parent,p);
-			break;
-			case "menu":
-				return new fzn.Menu(this.game,p);
-			break;
-			default:
-				return p;
-		}
-	},
-	remove: function(){
-		
-	}
-}
+	}*/
+})

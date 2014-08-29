@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Canvas Sprite Tests</title>
+		<style>
+			@font-face {
+				font-family: "8BitWonder";
+				src: url("fonts/8BitWonder.eot");
+				src: local("?"),
+				url("fonts/8BitWonder.woff") format("woff"),
+				url("fonts/8BitWonder.ttf") format("truetype"),
+				url("fonts/8BitWonder.svg#webfontkGgbkDbi") format("svg");
+			}
+			@font-face {
+				font-family: "Gamegirl";
+				src: url("fonts/Gamegirl.eot");
+				src: local("?"),
+				url("fonts/Gamegirl.woff") format("woff"),
+				url("fonts/Gamegirl.ttf") format("truetype"),
+				url("fonts/Gamegirl.svg#webfontkGgbkDbi") format("svg");
+			}
+			@font-face {
+				font-family: "PressStart";
+				src: url("fonts/PressStart2P.eot");
+				src: local("?"),
+				url("fonts/PressStart2P.woff") format("woff"),
+				url("fonts/PressStart2P.ttf") format("truetype"),
+				url("fonts/PressStart2P.svg#webfontkGgbkDbi") format("svg");
+			}
+		</style>
+		<script type="text/javascript" src="configJSON.js"></script>
+		<script type="text/javascript" src="js/fznObject.js"></script>
+		<script type="text/javascript" src="js/fznLoadable.js"></script>
+		<script type="text/javascript" src="js/fznCollection.js"></script>
+		<script type="text/javascript" src="js/fznCore.js"></script>
+		<script type="text/javascript" src="js/fznDrawable.js"></script>
+		<script type="text/javascript" src="js/fznCollidable.js"></script>
+		<script type="text/javascript" src="js/fznSprite.js"></script>
+		<script type="text/javascript" src="js/fznPlayer.js"></script>
+		<script type="text/javascript" src="js/fznControl.js"></script>
+		<script type="text/javascript" src="js/fznStage.js"></script>
+		<script type="text/javascript" src="js/fznLevel.js"></script>
+		<script>
+			function loadGame(){
+				game = new fzn.Game("board");
+				game.onLoad = function(game){
+					game.loadStage("levels","level_0");
+					game.go();
+					//var test = game.get("sprites","test01");
+					//test.setParent(game);
+					//test.redraw();
+				}
+				game.newGame(config);
+			}
+		</script>
+	</head>
+	<body onload="loadGame();">
+		<canvas id="board" width="300" height="300"></canvas>
+	</body>
+</html>
