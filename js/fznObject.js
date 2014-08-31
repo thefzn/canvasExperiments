@@ -1,6 +1,8 @@
 var fzn = fzn || {};
 fzn.Object = function (){
 	this.game = false;
+	this.parent = false;
+	this.parentIsStage = false;
 };
 fzn.Object.prototype = {
 	validateCoords: function(arr,def){
@@ -27,8 +29,6 @@ fzn.Object.prototype = {
 		return (!img) ? false : (img instanceof Image) ? img : (this.game) ? this.game.get("images",image) : false;
 	},
 	setParent: function(parent){
-		this.parent = false;
-		this.parentIsStage = false;
 		if(parent instanceof fzn.Stage){
 			this.parent = parent;
 			this.parentIsStage = true;

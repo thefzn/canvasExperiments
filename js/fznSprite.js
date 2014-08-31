@@ -2,12 +2,12 @@ var fzn = fzn || {};
 fzn.Sprite = function (params,parent){
 	var params = params || false,
 		parent = parent || false;
-	
+
 	// Sprite Options vars
 	this.sprite = params.sprite || false;
 	this.jumpForce = params.jumpForce || 30;
 	this.walkSpeed = params.walkSpeed || 3;
-	
+
 	// Sprite Status vars
 	this.action = "stand";
 	this.active = {};
@@ -15,7 +15,7 @@ fzn.Sprite = function (params,parent){
 	this.dir = "R";
 	this.frame = 0;
 	this.userAction = false;
-	
+
 	if(params){
 		this.Sprite(params,parent);
 	}
@@ -24,13 +24,13 @@ fzn.Sprite.prototype = new fzn.Collidable();
 fzn.Sprite.prototype.extend({
 	Sprite: function(params,parent){
 		this.Collidable(params,parent);
-		
+
 		this.action = params.action || this.action;
 		this.dir = params.dir || this.dir;
 		this.sprite = params.sprite || this.sprite;
 		this.jumpForce = params.jumpForce || this.jumpForce;
 		this.walkSpeed = params.walkSpeed || this.walkSpeed;
-		
+
 		this.mapDirections();
 	},
 	eachFrame: function(){
@@ -40,25 +40,25 @@ fzn.Sprite.prototype.extend({
 		if(!this.sprite)
 			return;
 		this.checkInput();
-		
+
 		// Set Active Action
-		this.active = 
+		this.active =
 			(!this.alive) ?
-				dir["dead"] || dir["stand"] 
+				dir["dead"] || dir["stand"]
 			:
-				(this.userAction) ? 
+				(this.userAction) ?
 					dir[this.action] || dir["jump"] || dir["walk"] || dir["stand"]
 				:
-					(jump && jump < 0) ? 
+					(jump && jump < 0) ?
 						dir["jump"] || dir["walk"] || dir["stand"]
 					:
 						(jump && jump > 0) ?
 							dir["fall"] || dir["jump"] || dir["walk"] || dir["stand"]
 						:
-							(walk && walk > 5) ? 
+							(walk && walk > 5) ?
 								dir["run"] || dir["walk"] || dir["stand"]
 							:
-								(walk) ? 
+								(walk) ?
 									dir["walk"] || dir["stand"]
 								:
 									dir["stand"];
@@ -70,9 +70,6 @@ fzn.Sprite.prototype.extend({
 		this.imagePos = this.active.steps[this.frame].slice();
 	},
 	checkInput: function(){},
-	turn: function(){
-	
-	},
 	please:function(action,p){
 		var target = this.actions[action] || false,
 			p = p || false;
@@ -115,20 +112,20 @@ fzn.Sprite.prototype.extend({
 				pos = [],
 				params = {};
 			if(this.shoot && !this.shootLag){
-				pos[0] = (this.dir == "R") ? this.pos[0] + this.size[0] - 5 : this.pos[0] + 5;
-				pos[1] = this.pos[1] + (this.size[1] / 2) - 5;
-				
-				if(typeof this.shoot == "object"){
-					bName = this.shoot.name || false;
-					params = this.shoot.params;
-				}else{
-					bName = this.shoot
-				}
-				params.pos = pos;
-				params.dir = this.dir;
-				this.shooting = true;
-				this.shootLag = true;
-				this.level.add("sprite",bName,false,params,false);
+		pos[0] = (this.dir == "R") ? this.pos[0] + this.size[0] - 5 : this.pos[0] + 5;
+		pos[1] = this.pos[1] + (this.size[1] / 2) - 5;
+
+		if(typeof this.shoot == "object"){
+			bName = this.shoot.name || false;
+			params = this.shoot.params;
+		}else{
+			bName = this.shoot
+		}
+		params.pos = pos;
+		params.dir = this.dir;
+		this.shooting = true;
+		this.shootLag = true;
+		this.level.add("sprite",bName,false,params,false);
 			}
 			*/
 		},
@@ -148,7 +145,7 @@ fzn.Sprite.prototype.extend({
 		}
 		tmp.L = this.sprite.L || {};
 		tmp.R = this.sprite.R || {};
-		
+
 		for(item in this.sprite){
 			if(item != "L" && item != "R"){
 				tmp.L[item] = this.sprite[item];

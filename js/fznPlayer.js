@@ -2,6 +2,7 @@ var fzn = fzn || {};
 fzn.Player = function (params,parent){
 	var params = params || false;
 	var parent = parent || false;
+	this.follow = false;
 	this.control = false;
 	if(params){
 		this.Player(params,parent);
@@ -11,7 +12,8 @@ fzn.Player.prototype = new fzn.Sprite();
 fzn.Player.prototype.extend({
 	Player: function(params,parent){
 		this.Sprite(params,parent);
-		this.setControl(params.controls)
+		this.setControl(params.controls);
+		this.follow = params.follow || this.follow;
 	},
 	checkInput: function(){
 		if(this.control){

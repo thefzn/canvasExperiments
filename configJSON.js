@@ -3,9 +3,10 @@ var config = {
 		{src:"img/ground.jpg",name:"randomImage"},
 		{src:"img/luigi-sprites.png",name:"luigi"},
 		{src:"img/blocks.png",name:"block"},
+		{src:"img/enemies.png",name:"enemies"},
 		"img/hills.png",
 		"img/gameover.png",
-		"img/clouds.png",
+		"img/clouds.png"
 	],
 	example: [
 		"stuff01",
@@ -20,9 +21,15 @@ var config = {
 			size:[16,22],
 			gravity: 4,
 			jumpForce: 30,
-			floor: 200,
+			floor: 300,
 			controls: 1,
-			collideList: ["qBlock"],
+			limit: true,
+			collide: {
+				qBlock: true,
+				spike: function(){
+					console.log("outch!")
+				}
+			},
 			sprite: {
 				R:{
 					stand:{ delay:0, steps:[[234,0]]},
@@ -59,7 +66,6 @@ var config = {
 			pos: [0,0],
 			color: "black",
 			size: [20, 20],
-			floor: 150,
 			gravity: 5,
 			yBreaks: 1,
 			yVel: 1
@@ -71,18 +77,48 @@ var config = {
 			sprite: {
 				stand:{ delay:1, steps:[[0,0],[0,0],[0,0],[0,0],[0,0],[51,0],[34,0],[17,0]]}
 			}
+		},
+		{
+			name: "spike",
+			image: "enemies",
+			collide: {
+				qBlock:true,
+				tube: true,
+				player01: true,
+				deadly:true
+			},
+			gravity: 3,
+			jumpForce:5,
+			size:[18,18],
+			floor: 300,
+			sprite: {
+				L:{
+					stand:{ delay:5, steps:[[0,77],[19,77]]},
+					dead: { delay:0, steps:[[94,77]]}
+				},
+				R:{
+					stand:{ delay:5, steps:[[459,320],[478,320]]},
+					dead: { delay:0, steps:[[365,320]]}
+				}
+			}
 		}
 	],
 	levels: [
 		{
 			name: "level_0",
+			size: [600,400],
+			color:"green",
 			sprites: [
-				{from:"qBlock",pos: [50,120],active: true},
+				{from:"spike",pos: [100,100],active: true},
+				{from:"qBlock",pos: [50,164],active: true},
 				{from:"qBlock",pos: [50,180],active: true},
-				{from:"qBlock",pos: [66,180],active: true}
+				{from:"qBlock",pos: [66,180],active: true},
+				{from:"qBlock",pos: [82,220],active: true},
+				{from:"qBlock",pos: [98,284],active: true},
+				{from:"qBlock",pos: [98,260],active: true}
 			],
 			players: [
-				{from:"player01",active: true}
+				{from:"player01",follow:true,active: true}
 			]
 		}
 	]

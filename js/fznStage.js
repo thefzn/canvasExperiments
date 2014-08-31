@@ -5,6 +5,8 @@ fzn.Stage = function (){
 	this.params = {};
 	this.instances = {};
 	this.players = [];
+	this.followPlayer = false;
+	this.size = [0,0];
 }
 fzn.Stage.prototype = new fzn.Drawable();
 fzn.Stage.prototype.extend({
@@ -15,6 +17,7 @@ fzn.Stage.prototype.extend({
 	start: function(){
 		var sprites = this.params.sprites || [],
 			players = this.params.players || [];
+		this.size = this.params.size || [this.game.cnv.width,this.game.cnv.height];
 		this.generateSprites(players,"players");
 		this.generateSprites(sprites);
 	},
@@ -23,7 +26,7 @@ fzn.Stage.prototype.extend({
 			type = type || "sprites",
 			i = 0,
 			len = ss.length || 0,
-			s,itm,a,tmp;
+			s,itm,a,tmp,f;
 		for(; i < len; i++){
 			s = ss[i];
 			itm = this.game.generate([type,s.from],s);
@@ -35,6 +38,10 @@ fzn.Stage.prototype.extend({
 			if(a){
 				this.activate(itm.UID);
 				this.registerType(itm);
+				f = itm.follow || false;
+				if(f){
+					this.followPlayer = itm.UID;
+				}
 			}
 			if(type == "players"){
 				tmp = "," + this.players.toString + ",";
@@ -44,10 +51,8 @@ fzn.Stage.prototype.extend({
 			}
 		}
 	},
-	go: function(){
+	afterRedraw: function(){
 		var itm;
-		this.calcPosition();
-		this.redraw();
 		for(itm in this.active){
 			if(this.active[itm])
 				this.sprites[itm].go();

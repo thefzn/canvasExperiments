@@ -1,18 +1,24 @@
 var fzn = fzn || {};
-fzn.Drawable = function (){}
+fzn.Drawable = function (params){
+	p = params || false;
+	if(p){
+		this.Drawable(p);
+	}
+}
 fzn.Drawable.prototype = new fzn.Object();
 fzn.Drawable.prototype.extend({
 	Drawable:function(params,parent){
 		var params = params || {};
 		var parent   = parent || false;
 		this.setParent(parent);
-		
+
 		// Basic data
 		this.canvas   = params.canvas || this.canvas;
 		this.name       = params.name || "item" + Math.random();
 		this.UID      = params.UID || "INVALID";
 		this.fixed    = params.fixed || false;
-		
+		this.limit    = params.limit || false;
+
 		// Drawing data
 		this.pos      = this.validateCoords(params.pos);
 		this.size     = this.validateCoords(params.size,[10,10]);
@@ -24,7 +30,7 @@ fzn.Drawable.prototype.extend({
 		this.tile     = params.tile || false;
 		this.isMoving = [false,false];
 		this.floor    = params.floor || false;
-		
+
 		// Animation data
 		var s  = parseInt(params.speedUp) || false,
 			g  = parseInt(params.gravity) || false;
@@ -44,10 +50,11 @@ fzn.Drawable.prototype.extend({
 		}
 	},
 	go: function(){
-		this.eachFrame();
 		this.calcPosition();
 		this.beforeRedraw();
+		this.eachFrame();
 		this.redraw();
+		this.afterRedraw();
 	},
 	calcPosition: function(){
 		var res = [],
@@ -61,28 +68,60 @@ fzn.Drawable.prototype.extend({
 				c++;
 				continue;
 			}
-			
+
 			a.vel += a.acc;
 			a.vel = this["adjust" + axis](a.vel);
 			vel = (a.max != 0 && a.vel > a.max) ? a.max : a.vel;
 			vel = (a.min != 0 && vel < a.min) ? a.min : vel;
 			r = tar + vel;
-			
+
 			if(axis == "y" && this.floor){
 				f = this.floor - this.size[1];
 				r = (r <= f) ? r : f;
 			}
-		
+
 			res.push(r);
 			this.isMoving[c] = (tar == r) ? false : true;
 			c++;
 		}
+		res = (this.parentIsStage && this.limit) ? this.checkLimit(res) : res;
 		this.pos = res;
+	},
+	checkLimit: function(pos){
+		var stage = this.parent,
+			stageBonds = stage.getBonds(),
+			myBondR = pos[0] + this.size[0],
+			myBondB = pos[1] + this.size[1],
+			res = [];
+		res[0] = (pos[0] < stage.pos[0]) ?
+					stage.pos[0]
+				:
+					(myBondR > stage.size[0]) ?
+						stage.size[0] - this.size[0]
+					:
+						pos[0];
+		res[1] = (pos[1] < stage.pos[1]) ?
+					stage.pos[1]
+				:
+					(myBondB > stage.size[1]) ?
+						stage.size[1] - this.size[1]
+					:
+						pos[1];
+		return res;
+	},
+	getBonds: function(){
+		return {
+				T : this.pos[1],
+				B : this.pos[1] + this.size[1],
+				L : this.pos[0],
+				R : this.pos[0] + this.size[0],
+		}
 	},
 	redraw: function(){
 		if(!this.canvas)
 			return false;
 		var posX,posY,pat;
+		//console.log("d",this.pos[0]);
 		this.canvas.save();
 		if(this.opacity != 1){
 			this.canvas.globalAlpha = (this.parent) ? this.opacity * this.parent.opacity : this.opacity;
@@ -125,6 +164,7 @@ fzn.Drawable.prototype.extend({
 	// Placeholders
 	eachFrame: function(){},
 	beforeRedraw: function(){},
+	afterRedraw: function(){},
 	adjustx: function(r){return r},
 	adjusty: function(r){return r}
 });

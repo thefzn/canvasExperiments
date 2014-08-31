@@ -16,7 +16,7 @@ fzn.Sprite = function (game,params){
 		this.life = params.life || 1;
 		this.lifetime = params.lifetime || false;
 		this.alive = true;
-		
+
 		// Movement Vars
 		this.gravity = params.gravity || 0;
 		this.velDown = params.velDown || 0;
@@ -31,7 +31,7 @@ fzn.Sprite = function (game,params){
 		this.collideItems = [];
 		this.activateNPC = params.NPC || false;
 		this.NPC = false;
-		
+
 		// Animation Vars
 		this.action = params.action || "stand";
 		this.frame = 0;
@@ -66,7 +66,7 @@ fzn.Sprite.prototype = {
 		if(this.activateNPC){
 			this.NPC.move();
 		}
-		
+
 		if(this.gravity != 0){
 			this.velDown = this.velDown + this.gravity;
 			this.velDown = (this.velDown > this.maxVelDown) ? this.maxVelDown : this.velDown;
@@ -105,27 +105,27 @@ fzn.Sprite.prototype = {
 			this.pos = [newposx,newposy];
 		}
 		dir = this.sprite[this.dir];
-		this.active = 
+		this.active =
 			(this.dying) ?
-				dir["dead"] || dir["stand"] 
+				dir["dead"] || dir["stand"]
 			:
-				(this.shooting) ? 
+				(this.shooting) ?
 					dir["shoot"] || dir["jump"] || dir["walk"] || dir["stand"]
 				:
-					(this.jumping) ? 
+					(this.jumping) ?
 						dir["jump"] || dir["walk"] || dir["stand"]
 					:
 						(this.falling) ?
 							dir["fall"] || dir["jump"] || dir["walk"] || dir["stand"]
 						:
 							dir[this.action] || dir["stand"];
-		
+
 		if(this.active.delay != 0 && this.game.turn % this.active.delay == 0){
 			frame++;
 		}
 		this.frame = (frame >= this.active.steps.length) ? 0 : frame;
 		this.shooting = false;
-		
+
 		if(this.dying && this.pos[1] > this.level.size[1]){
 			this.alive = false;
 		}
@@ -176,7 +176,7 @@ fzn.Sprite.prototype = {
 			if(this.shoot && !this.shootLag){
 				pos[0] = (this.dir == "R") ? this.pos[0] + this.size[0] - 5 : this.pos[0] + 5;
 				pos[1] = this.pos[1] + (this.size[1] / 2) - 5;
-				
+
 				if(typeof this.shoot == "object"){
 					bName = this.shoot.name || false;
 					params = this.shoot.params;
@@ -317,7 +317,7 @@ fzn.Sprite.prototype = {
 		return [Math.round(posx),Math.round(posy)];
 	},
 	onDie:function(){
-	
+
 	},
 	getCollideItems: function(){
 		var item,target,type;
@@ -347,7 +347,7 @@ fzn.Sprite.prototype = {
 		}
 		this.sprite.L = this.sprite.L || {};
 		this.sprite.R = this.sprite.R || {};
-		
+
 		for(item in this.sprite){
 			if(item != "L" && item != "R"){
 				this.sprite.L[item] = this.sprite[item];
